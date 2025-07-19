@@ -6,3 +6,11 @@
 # @Software: PyCharm
 
 
+class Meta:
+	def __init__(self):
+		self.distances = {}
+		self.nodes = {}
+		self.requests = {}
+		self.vehicles = {}
+		self.vehicleRunBetweenNodesTime = {}
+		

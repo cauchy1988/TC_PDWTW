@@ -6,7 +6,7 @@
 # @Software: PyCharm
 
 class Vehicle:
-	def __init__(self, identity, capacity):
+	def __init__(self, identity, capacity, velocity):
 		self.identity = identity
 		self.capacity = capacity
-	
+		self.velocity = velocity
