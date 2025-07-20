@@ -19,6 +19,9 @@ class Meta:
 		# vehicle_id -> {first_node_id -> {second_node_id -> run_time}}
 		self._vehicleRunBetweenNodesTime = {}
 		
+		self._alpha = 1.0
+		self._beta = 1.0
+
 	@property
 	def distances(self):
 		return self._distances
@@ -38,6 +41,14 @@ class Meta:
 	@property
 	def vehicle_run_between_nodes_time(self):
 		return self._vehicleRunBetweenNodesTime
+	
+	@property
+	def alpha(self):
+		return self._alpha
+	
+	@property
+	def beta(self):
+		return self._beta
 	
 	
 	
