@@ -8,9 +8,36 @@
 
 class Meta:
 	def __init__(self):
-		self.distances = {}
-		self.nodes = {}
-		self.requests = {}
-		self.vehicles = {}
-		self.vehicleRunBetweenNodesTime = {}
+		# first_node_id -> {second_node_id -> distance between them}
+		self._distances = {}
+		# node_id -> Node
+		self._nodes = {}
+		# request_id -> Request
+		self._requests = {}
+		# vehicle_id -> Vehicle
+		self._vehicles = {}
+		# vehicle_id -> {first_node_id -> {second_node_id -> run_time}}
+		self._vehicleRunBetweenNodesTime = {}
 		
+	@property
+	def distances(self):
+		return self._distances
+	
+	@property
+	def nodes(self):
+		return self._nodes
+	
+	@property
+	def requests(self):
+		return self._requests
+	
+	@property
+	def vehicles(self):
+		return self._vehicles
+	
+	@property
+	def vehicle_run_between_nodes_time(self):
+		return self._vehicleRunBetweenNodesTime
+	
+	
+	

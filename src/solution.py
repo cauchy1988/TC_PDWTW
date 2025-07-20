@@ -16,7 +16,20 @@ class Solution:
 	
 class PDWTWSolution(Solution):
 	def __init__(self, meta_obj: meta):
-		self.metaObj = meta_obj
+		self._metaObj = meta_obj
 		# vehicle_id -> path
-		self.paths = {}
-		self.request_bank = set([request_id for request_id, _ in meta_obj.requests])
+		self._paths = {}
+		self._requestBank = set([request_id for request_id, _ in meta_obj.requests])
+		
+	@property
+	def meta_obj(self):
+		return self._metaObj
+	
+	@property
+	def paths(self):
+		return self._paths
+	
+	@property
+	def request_bank(self):
+		return self._requestBank
+	
