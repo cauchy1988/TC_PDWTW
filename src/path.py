@@ -156,7 +156,7 @@ class Path:
 		new_path_list.sort(key=lambda item: (self.meta_obj.alpha * item[0], self.meta_obj.beta * item[1]))
 		return True, new_path_list[0][0], new_path_list[0][1], new_path_list[0][2]
 	
-	def try_to_remove_request(self, request_id: int) -> (bool, float, float):
+	def try_to_remove_request(self, request_id: int) -> (float, float):
 		if self.vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
 			assert False
 			
@@ -165,7 +165,9 @@ class Path:
 		
 		pick_node_idx = self.route.index(pick_node_id)
 		delivery_node_idx = self.route.index(delivery_node_id)
-		
+		assert pick_node_idx > 0
+		assert delivery_node_idx > 0
+
 		self.route.pop(pick_node_idx)
 		self.route.pop(delivery_node_idx)
 
@@ -209,5 +211,5 @@ class Path:
 		current_distance = self.distances[len(self.distances) - 1]
 		distance_diff = prev_distance - current_distance
 
-		return True, distance_diff, time_cost_diff
+		return distance_diff, time_cost_diff
 	
