@@ -17,10 +17,10 @@ class Solution:
 class PDWTWSolution(Solution):
 	def __init__(self, meta_obj: meta):
 		self._metaObj = meta_obj
-		# vehicle_id -> path
+		# vehicle_id -> Path
 		self._paths = {}
 		self._requestBank = set([request_id for request_id, _ in meta_obj.requests])
-		self._requestIdToPath = {}
+		self._requestIdToVehicleId = {}
 		
 	@property
 	def meta_obj(self):
@@ -35,7 +35,7 @@ class PDWTWSolution(Solution):
 		return self._requestBank
 	
 	@property
-	def request_id_to_path(self):
-		return self._requestIdToPath
+	def request_id_to_vehicle_id(self):
+		return self._requestIdToVehicleId
 	
 	
