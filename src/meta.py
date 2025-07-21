@@ -22,7 +22,7 @@ class Meta:
 		self._alpha = 1.0
 		self._beta = 1.0
 		self._gama = 1000000000.0
-
+		
 	@property
 	def distances(self):
 		return self._distances

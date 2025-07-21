@@ -5,17 +5,17 @@
 # @File    : solution.py
 # @Software: PyCharm
 import abc
-import meta
+from meta import Meta
 
 
 class Solution:
 	@abc.abstractmethod
-	def __init__(self, meta_obj: meta):
+	def __init__(self, meta_obj: Meta):
 		pass
 	
 	
 class PDWTWSolution(Solution):
-	def __init__(self, meta_obj: meta):
+	def __init__(self, meta_obj: Meta):
 		self._metaObj = meta_obj
 		# vehicle_id -> Path
 		self._paths = {}

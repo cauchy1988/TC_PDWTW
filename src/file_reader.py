@@ -6,7 +6,7 @@
 # @Software: PyCharm
 
 import abc
-import meta
+from meta import Meta
 
 
 class FileReader:
@@ -14,7 +14,7 @@ class FileReader:
 		pass
 	
 	@abc.abstractmethod
-	def read_from_directory(self, directory_path: str, meta_obj: meta):
+	def read_from_directory(self, directory_path: str, meta_obj: Meta):
 		"""
 		从一个目录的一系列文件中读取具体模型数据
 		"""

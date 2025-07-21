@@ -5,12 +5,11 @@
 # @File    : path.py
 # @Software: PyCharm
 from __future__ import annotations
-
-import meta
+from meta import Meta
 
 
 class Path:
-	def __init__(self, vehicle_id: int, meta_obj: meta, need_init = True):
+	def __init__(self, vehicle_id: int, meta_obj: Meta, need_init=True):
 		self._metaObj = meta_obj
 		self._vehicleId = vehicle_id
 		
