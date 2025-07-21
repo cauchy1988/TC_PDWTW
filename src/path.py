@@ -94,43 +94,41 @@ class Path:
 		self.route.insert(pick_insert_idx, pick_node_id)
 		self.route.insert(delivery_insert_idx, delivery_node_id)
 		
-		prev_idx = pick_insert_idx - 1
 		self.start_service_time_line.insert(pick_insert_idx, 0)
 		self.start_service_time_line.insert(delivery_insert_idx, 0)
 		for i in range(pick_insert_idx, len(self.start_service_time_line)):
-			prev_node_id = self.route[prev_idx]
+			prev_node_id = self.route[i - 1]
 			current_node_id = self.route[i]
-			new_start_time = max(self.start_service_time_line[prev_idx] +
-							    self.meta_obj.nodes[prev_node_id].service_time,
+			new_start_time = max(self.start_service_time_line[i - 1] +
+							    self.meta_obj.nodes[prev_node_id].service_time +
+			                    self.meta_obj.vehicle_run_between_nodes_time[self.vehicle_id][prev_node_id][current_node_id],
 			                    self.meta_obj.nodes[current_node_id].earliest_service_time)
 			
 			if new_start_time < self.meta_obj.nodes[current_node_id].earliest_service_time or \
 			   new_start_time > self.meta_obj.nodes[current_node_id].latest_service_time:
 				return False, 0, 0
-			prev_idx = i
+			self.start_service_time_line[i] = new_start_time
+			
 		current_whole_time_cost = self._startServiceTimeLine[len(self._startServiceTimeLine) - 1] - self._startServiceTimeLine[0]
 		time_cost_diff = current_whole_time_cost - self.whole_time_cost
 		self._wholeTimeCost = current_whole_time_cost
 			
-		prev_idx = pick_insert_idx - 1
 		self.load_line.insert(pick_insert_idx, 0)
 		self.load_line.insert(delivery_insert_idx, 0)
 		for i in range(pick_insert_idx, delivery_insert_idx + 1):
 			current_node_id = self.route[i]
-			new_load = self.load_line[prev_idx] + self.meta_obj.nodes[current_node_id].load
+			new_load = self.load_line[i - 1] + self.meta_obj.nodes[current_node_id].load
 			if new_load > self.meta_obj.vehicles[self.vehicle_id].capacity:
 				return False, 0, 0
 			self.load_line[i] = new_load
-			prev_idx = i
 			
 		prev_distance = self.distances[len(self.distances) - 1]
-		prev_idx = pick_insert_idx - 1
 		self.distances.insert(pick_insert_idx, 0)
 		self.distances.insert(delivery_insert_idx, 0)
 		for i in range(pick_insert_idx, len(self.distances)):
-			prev_node_id = self.route[prev_idx]
+			prev_node_id = self.route[i - 1]
 			current_node_id = self.route[i]
-			current_distance = self.distances[prev_idx] + \
+			current_distance = self.distances[i - 1] + \
 							   self.meta_obj.distances[prev_node_id][current_node_id]
 			self.distances[i] = current_distance
 		
@@ -146,7 +144,7 @@ class Path:
 		route_len = len(self._route)
 		new_path_list = []
 		for i in range(1, route_len):
-			for j in range(i + 1, route_len):
+			for j in range(i + 1, route_len + 1):
 				new_path = self.copy()
 				ok, distance_diff, time_cost_diff = new_path.try_to_insert_request(request_id, i, j)
 				if ok:
@@ -157,4 +155,59 @@ class Path:
 		
 		new_path_list.sort(key=lambda item: (self.meta_obj.alpha * item[0], self.meta_obj.beta * item[1]))
 		return True, new_path_list[0][0], new_path_list[0][1], new_path_list[0][2]
+	
+	def try_to_remove_request(self, request_id: int) -> (bool, float, float):
+		if self.vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
+			assert False
+			
+		pick_node_id = self.meta_obj.requests[request_id].pick_node_id
+		delivery_node_id = self.meta_obj.requests[request_id].delivery_node_id
 		
+		pick_node_idx = self.route.index(pick_node_id)
+		delivery_node_idx = self.route.index(delivery_node_id)
+		
+		self.route.pop(pick_node_idx)
+		self.route.pop(delivery_node_idx)
+
+		prev_whole_time_cost = self.whole_time_cost
+		self.start_service_time_line.pop(pick_node_idx)
+		self.start_service_time_line.pop(delivery_node_idx - 1)
+		for i in range(pick_node_idx, len(self.start_service_time_line)):
+			prev_node_id = self.route[i - 1]
+			current_node_id = self.route[i]
+			new_start_time = max(self.start_service_time_line[i - 1] +
+			                     self.meta_obj.nodes[prev_node_id].service_time +
+			                     self.meta_obj.vehicle_run_between_nodes_time[self.vehicle_id][prev_node_id][current_node_id],
+			                     self.meta_obj.nodes[current_node_id].earliest_service_time)
+			
+			if new_start_time < self.meta_obj.nodes[current_node_id].earliest_service_time or \
+				new_start_time > self.meta_obj.nodes[current_node_id].latest_service_time:
+				assert False
+		
+		self._wholeTimeCost = self._startServiceTimeLine[len(self._startServiceTimeLine) - 1] - self._startServiceTimeLine[0]
+		time_cost_diff = prev_whole_time_cost - self._wholeTimeCost
+
+		self.load_line.pop(pick_node_idx)
+		self.load_line.pop(delivery_node_idx)
+		for i in range(pick_node_idx, delivery_node_idx - 1):
+			current_node_id = self.route[i]
+			new_load = self.load_line[i - 1] + self.meta_obj.nodes[current_node_id].load
+			if new_load > self.meta_obj.vehicles[self.vehicle_id].capacity:
+				assert False
+			self.load_line[i] = new_load
+		
+		prev_distance = self.distances[len(self.distances) - 1]
+		self.distances.pop(pick_node_idx)
+		self.distances.pop(delivery_node_idx)
+		for i in range(pick_node_idx, len(self.distances)):
+			prev_node_id = self.route[i - 1]
+			current_node_id = self.route[i]
+			current_distance = self.distances[i - 1] + \
+			                   self.meta_obj.distances[prev_node_id][current_node_id]
+			self.distances[i] = current_distance
+		
+		current_distance = self.distances[len(self.distances) - 1]
+		distance_diff = prev_distance - current_distance
+
+		return True, distance_diff, time_cost_diff
+	
