@@ -50,6 +50,9 @@ class Path:
 		
 		return new_path
 	
+	def is_path_free(self):
+		return 2 >= len(self.route)
+	
 	@property
 	def meta_obj(self):
 		return self._metaObj
@@ -211,4 +214,8 @@ class Path:
 		distance_diff = prev_distance - current_distance
 
 		return distance_diff, time_cost_diff
-	
+
+	def get_node_start_service_time(self, node_id: int):
+		node_idx = self.route.index(node_id)
+		return self.start_service_time_line[node_idx]
+		

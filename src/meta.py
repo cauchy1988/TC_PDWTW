@@ -4,20 +4,24 @@
 # @Author  : Tang Chao
 # @File    : meta.py
 # @Software: PyCharm
+from typing import Dict
+from node import Node
+from request import Request
+from vehicle import Vehicle
 
 
 class Meta:
 	def __init__(self):
 		# first_node_id -> {second_node_id -> distance between them}
-		self._distances = {}
+		self._distances: Dict[int, Dict[int, float]] = {}
 		# node_id -> Node
-		self._nodes = {}
+		self._nodes: Dict[int, Node] = {}
 		# request_id -> Request
-		self._requests = {}
+		self._requests: Dict[int, Request] = {}
 		# vehicle_id -> Vehicle
-		self._vehicles = {}
+		self._vehicles: Dict[int, Vehicle] = {}
 		# vehicle_id -> {first_node_id -> {second_node_id -> run_time}}
-		self._vehicleRunBetweenNodesTime = {}
+		self._vehicleRunBetweenNodesTime: Dict[int, Dict[int, Dict[int, float]]] = {}
 		
 		self._alpha = 1.0
 		self._beta = 1.0
