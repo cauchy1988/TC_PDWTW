@@ -24,6 +24,19 @@ class PDWTWSolution(Solution):
 		self._requestBank = set([request_id for request_id, _ in meta_obj.requests])
 		self._requestIdToVehicleId: Dict[int, int] = {}
 		self._nodeIdToVehicleId: Dict[int, int] = {}
+		
+		self._vehicleBank = set([vehicle_id for vehicle_id, _ in meta_obj.vehicles])
+		
+	def cost_if_remove_request(self, request_id: int):
+		assert request_id in self.request_id_to_vehicle_id
+		
+		origin_path = self.paths[self.request_id_to_vehicle_id[request_id]].copy()
+		assert origin_path is not None
+		copied_path = origin_path.copy()
+		
+		distance_diff, time_diff = copied_path.try_to_remove_request(request_id)
+		
+		return self.meta_obj.alpha * distance_diff + self.meta_obj.beta * time_diff
 	
 	def remove_requests(self, request_id_set):
 		for request_id in request_id_set:
@@ -43,6 +56,7 @@ class PDWTWSolution(Solution):
 			del self.node_id_to_vehicle_id[delivery_node_id]
 			if path_obj.is_path_free():
 				del self.paths[vehicle_id]
+				self.vehicle_bank.add(vehicle_id)
 				
 	def get_node_start_service_time_in_path(self, node_id: int):
 		assert node_id in self.node_id_to_vehicle_id
@@ -71,6 +85,10 @@ class PDWTWSolution(Solution):
 	@property
 	def node_id_to_vehicle_id(self):
 		return self._nodeIdToVehicleId
+	
+	@property
+	def vehicle_bank(self):
+		return self._vehicleBank
 	
 	
 	
