@@ -38,6 +38,21 @@ class PDWTWSolution(Solution):
 		
 		return self.meta_obj.alpha * distance_diff + self.meta_obj.beta * time_diff
 	
+	def cost_if_insert_request_to_vehicle_path(self, request_id: int, vehicle_id: int) -> (bool, float):
+		assert request_id in self.request_bank and (vehicle_id in self.vehicle_bank or vehicle_id in self.paths)
+		
+		if vehicle_id in self.paths:
+			the_path = self.paths[vehicle_id].copy()
+		else:
+			the_path = Path(vehicle_id, self.meta_obj)
+			
+		ok, distance_diff, time_diff = the_path.try_to_insert_request_optimal(request_id)
+		
+		if not ok:
+			return False, 0.0
+		
+		return True, self.meta_obj.alpha * distance_diff + self.meta_obj.beta * time_diff
+	
 	def remove_requests(self, request_id_set):
 		for request_id in request_id_set:
 			assert request_id in self.request_id_to_vehicle_id
@@ -58,6 +73,25 @@ class PDWTWSolution(Solution):
 				del self.paths[vehicle_id]
 				self.vehicle_bank.add(vehicle_id)
 				
+	def insert_one_request_optimal(self, request_id: int, vehicle_id: int) -> bool:
+		assert request_id in self.request_bank
+		if vehicle_id in self.vehicle_bank:
+			the_path = Path(vehicle_id, self.meta_obj)
+		else:
+			assert vehicle_id in self.paths
+			the_path = self.paths[vehicle_id]
+		ok, _, __ = the_path.try_to_insert_request_optimal(request_id)
+		if ok:
+			self.request_bank.remove(request_id)
+			self.request_id_to_vehicle_id[request_id] = vehicle_id
+			request_obj = self.meta_obj.requests[request_id]
+			self.node_id_to_vehicle_id[request_obj.pick_node_id] = vehicle_id
+			self.node_id_to_vehicle_id[request_obj.delivery_node_id] = vehicle_id
+			if vehicle_id in self.vehicle_bank:
+				self.vehicle_bank.remove(vehicle_id)
+				self.paths[vehicle_id] = the_path
+		return ok
+	
 	def get_node_start_service_time_in_path(self, node_id: int):
 		assert node_id in self.node_id_to_vehicle_id
 		vehicle_id = self.node_id_to_vehicle_id[node_id]
