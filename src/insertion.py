@@ -58,3 +58,4 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 def regret_k_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, k: int):
 	assert q > 0
 	assert k >= 2
+	assert meta_obj is not None
