@@ -42,10 +42,10 @@ class Path:
 		new_path = Path(self._vehicleId, self._metaObj, False)
 		new_path._metaObj = self._metaObj
 		new_path._vehicleId = self._vehicleId
-		new_path._route = [item for item in self._route]
-		new_path._startServiceTimeLine = [item for item in self._startServiceTimeLine]
-		new_path._loadLine = [item for item in self._loadLine]
-		new_path._distances = [item for item in self._distances]
+		new_path._route = self._route.copy()
+		new_path._startServiceTimeLine = self._startServiceTimeLine.copy()
+		new_path._loadLine = self._loadLine.copy()
+		new_path._distances = self._distances.copy()
 		new_path._wholeTimeCost = self._wholeTimeCost
 		
 		return new_path

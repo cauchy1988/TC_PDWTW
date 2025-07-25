@@ -72,7 +72,7 @@ def random_removal(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 	assert q > 0
 	assert meta_obj is not None
 	
-	solution_request_list = [request_id for request_id, _ in one_solution.request_id_to_vehicle_id]
+	solution_request_list = [request_id for request_id in one_solution.request_id_to_vehicle_id]
 	assert q <= len(solution_request_list)
 	q_request_id_list = random.sample(solution_request_list, q)
 	one_solution.remove_requests(q_request_id_list)
@@ -83,7 +83,7 @@ def worst_removal(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 	assert meta_obj is not None
 	
 	while q > 0:
-		big_l = [request_id for request_id, _ in one_solution.request_id_to_vehicle_id]
+		big_l = [request_id for request_id in one_solution.request_id_to_vehicle_id]
 		assert len(big_l) > 0
 		big_l.sort(key=one_solution.cost_if_remove_request, reverse=True)
 		y = random.random()

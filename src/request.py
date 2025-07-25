@@ -11,7 +11,7 @@ class Request:
 		self._pickNodeId = pickup_node_id
 		self._deliveryNodeId = delivery_node_id
 		self._requireCapacity = require_capacity
-		self._vehicleSet = vehicle_set
+		self._vehicleSet: set = vehicle_set
 	
 	@property
 	def identity(self):

@@ -54,6 +54,9 @@ class Meta:
 	@property
 	def beta(self):
 		return self._beta
-	
+
+	@property
+	def gama(self):
+		return self._gama
 	
 	

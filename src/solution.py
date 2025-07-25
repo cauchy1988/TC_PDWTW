@@ -21,11 +21,20 @@ class PDWTWSolution(Solution):
 		self._metaObj = meta_obj
 		# vehicle_id -> Path
 		self._paths: Dict[int, Path] = {}
-		self._requestBank = set([request_id for request_id, _ in meta_obj.requests])
+		self._requestBank = set([request_id for request_id in meta_obj.requests])
 		self._requestIdToVehicleId: Dict[int, int] = {}
 		self._nodeIdToVehicleId: Dict[int, int] = {}
 		
-		self._vehicleBank = set([vehicle_id for vehicle_id, _ in meta_obj.vehicles])
+		self._vehicleBank = set([vehicle_id for vehicle_id in meta_obj.vehicles])
+	
+	def copy(self):
+		new_obj = PDWTWSolution(self.meta_obj)
+		for vehicle_id, the_path in self.paths.items():
+			new_obj.paths[vehicle_id] = the_path.copy()
+		new_obj._requestBank = self.request_bank.copy()
+		new_obj._requestIdToVehicleId = self.request_id_to_vehicle_id.copy()
+		new_obj._nodeIdToVehicleId = self.node_id_to_vehicle_id.copy()
+		new_obj._vehicleBank = self.vehicle_bank.copy()
 		
 	def cost_if_remove_request(self, request_id: int):
 		assert request_id in self.request_id_to_vehicle_id

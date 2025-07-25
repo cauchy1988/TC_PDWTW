@@ -30,7 +30,7 @@ def _get_request_vehicle_cost(one_solution: PDWTWSolution) -> Dict[int, Dict[int
 
 def _update_request_vehicle_cost(already_inserted_request_id: int, already_inserted_vehicle_path: int,request_vehicle_cost: Dict[int, Dict[int, float]], one_solution: PDWTWSolution):
 	del request_vehicle_cost[already_inserted_request_id]
-	for request_id, vehicle_id_dict in request_vehicle_cost:
+	for request_id, vehicle_id_dict in request_vehicle_cost.items():
 		ok, cost = one_solution.cost_if_insert_request_to_vehicle_path(request_id, already_inserted_vehicle_path)
 		if not ok:
 			cost = _unlimited_float_bound
@@ -47,7 +47,7 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 		minimum_cost = _unlimited_float_bound
 		request_id_for_insertion = -1
 		vehicle_id_for_insertion = -1
-		for request_id, vehicle_id_dict in request_vehicle_cost:
+		for request_id, vehicle_id_dict in request_vehicle_cost.items():
 			for vehicle_id, cost in vehicle_id_dict:
 				if cost < minimum_cost:
 					minimum_cost = cost
@@ -76,9 +76,9 @@ def regret_k_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, k: i
 	while qq > 0:
 		request_vehicle_list: Dict[int, list] = {}
 		request_k_cost_list = []
-		for request_id, cost_dict in request_vehicle_cost:
+		for request_id, cost_dict in request_vehicle_cost.items():
 			request_vehicle_list[request_id] = []
-			for vehicle_id, cost in cost_dict:
+			for vehicle_id, cost in cost_dict.items():
 				request_vehicle_list[request_id].append((vehicle_id, cost))
 			request_vehicle_list[request_id].sort(key=lambda tp: tp[1])
 			k_cost_sum = 0.0
