@@ -26,6 +26,8 @@ class PDWTWSolution(Solution):
 		self._nodeIdToVehicleId: Dict[int, int] = {}
 		
 		self._vehicleBank = set([vehicle_id for vehicle_id in meta_obj.vehicles])
+		
+		self._objective_cost = 0.0 + self.meta_obj.gama * len(self.request_bank)
 	
 	def copy(self):
 		new_obj = PDWTWSolution(self.meta_obj)
@@ -35,6 +37,7 @@ class PDWTWSolution(Solution):
 		new_obj._requestIdToVehicleId = self.request_id_to_vehicle_id.copy()
 		new_obj._nodeIdToVehicleId = self.node_id_to_vehicle_id.copy()
 		new_obj._vehicleBank = self.vehicle_bank.copy()
+		self._objective_cost = self.objective_cost
 		
 	def cost_if_remove_request(self, request_id: int):
 		assert request_id in self.request_id_to_vehicle_id
@@ -109,6 +112,9 @@ class PDWTWSolution(Solution):
 		path_obj = self.paths[vehicle_id]
 		return path_obj.get_node_start_service_time(node_id)
 	
+	def _calculate_objective_cost(self):
+		pass
+	
 	@property
 	def meta_obj(self):
 		return self._metaObj
@@ -133,5 +139,7 @@ class PDWTWSolution(Solution):
 	def vehicle_bank(self):
 		return self._vehicleBank
 	
-	
+	@property
+	def objective_cost(self):
+		return self._objective_cost
 	
