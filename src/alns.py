@@ -69,9 +69,18 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		remove_func(meta_obj, s_p, q)
 		insertion_func(meta_obj, s_p, q)
 		
+		# TODO: check accepted solution
+		
 		if s_p.objective_cost < s_best.objective_cost:
 			s_best = s_p.copy()
 			removal_rewards[remove_func_idx] += _reward_adds[0]
 			insertion_rewards[insertion_func_idx] += _reward_adds[0]
 
-			
+		# accept logic
+		if s_p.objective_cost <= s.objective_cost:
+			s = s_p.copy()
+			removal_rewards[remove_func_idx] += _reward_adds[1]
+			insertion_rewards[insertion_func_idx] += _reward_adds[1]
+		else:
+			# TODO: simulated annealing logic
+			pass
