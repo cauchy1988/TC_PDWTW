@@ -39,6 +39,8 @@ class PDWTWSolution(Solution):
 		new_obj._vehicleBank = self.vehicle_bank.copy()
 		self._objective_cost = self.objective_cost
 		
+		return new_obj
+		
 	def cost_if_remove_request(self, request_id: int):
 		assert request_id in self.request_id_to_vehicle_id
 		
@@ -84,7 +86,9 @@ class PDWTWSolution(Solution):
 			if path_obj.is_path_free():
 				del self.paths[vehicle_id]
 				self.vehicle_bank.add(vehicle_id)
-				
+			
+			self._update_objective_cost_all()
+			
 	def insert_one_request_optimal(self, request_id: int, vehicle_id: int) -> bool:
 		assert request_id in self.request_bank
 		if vehicle_id in self.vehicle_bank:
@@ -102,6 +106,7 @@ class PDWTWSolution(Solution):
 			if vehicle_id in self.vehicle_bank:
 				self.vehicle_bank.remove(vehicle_id)
 				self.paths[vehicle_id] = the_path
+			self._update_objective_cost_all()
 		return ok
 	
 	def get_node_start_service_time_in_path(self, node_id: int):
@@ -112,8 +117,11 @@ class PDWTWSolution(Solution):
 		path_obj = self.paths[vehicle_id]
 		return path_obj.get_node_start_service_time(node_id)
 	
-	def _calculate_objective_cost(self):
-		pass
+	def _update_objective_cost_all(self):
+		self._objective_cost = 0.0
+		for vehicle_id in self.paths:
+			self._objective_cost += self.meta_obj.alpha * self.paths[vehicle_id].whole_distance_cost + self.meta_obj.beta * self.paths[vehicle_id].whole_time_cost
+		self._objective_cost += self.meta_obj.gama * len(self.request_bank)
 	
 	@property
 	def meta_obj(self):

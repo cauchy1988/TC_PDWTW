@@ -80,6 +80,10 @@ class Path:
 	@property
 	def whole_time_cost(self):
 		return self._wholeTimeCost
+	
+	@property
+	def whole_distance_cost(self):
+		return self.distances[len(self.distances) - 1]
 
 	@classmethod
 	def get_path_distance_diff(cls, first_path, second_path):
