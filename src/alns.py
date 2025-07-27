@@ -9,33 +9,34 @@ from solution import PDWTWSolution
 from removal import *
 from insertion import *
 import random
+import math
 
 _iteration_num = 25000
 _ep_tion = 0.4
 
 _w = 0.05
+_p = 0.5
+
 _c = 0.99975
 _r = 0.1
 _segment_num = 100
 _reward_adds = [33, 9, 13]
 
-
 def _select_function_with_weight(funcs, weights):
-	"""
-	根据权重随机选择一个函数及其下标
-	:param funcs: 函数列表
-	:param weights: 对应的权重列表
-	:return: (选中的函数, 下标)
-	"""
-	# 使用random.choices根据权重选择下标
 	selected_index = random.choices(
-		range(len(funcs)),  # 生成下标列表[0,1,2...]
-		weights=weights,    # 对应的权重
-		k=1                 # 选择1个元素
-	)[0]  # 提取结果中的第一个元素（整数下标）
+		range(len(funcs)),
+		weights=weights,
+		k=1
+	)[0]
 
 	return funcs[selected_index], selected_index
 
+def _compute_initial_temperature(z0: float, w: float, p: float) -> float:
+	if p <= 0 or p >= 1:
+		raise ValueError("接受概率 p 必须在 (0,1) 范围内")
+	delta = w * z0
+	t_start = -delta / math.log(p)
+	return t_start
 
 def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWSolution):
 	requests_num = len(meta_obj.requests)
@@ -56,6 +57,10 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	
 	s_best = initial_solution.copy()
 	s = initial_solution.copy()
+
+	t_start = _compute_initial_temperature(initial_solution.objective_cost, _w, _p)
+	t_current = t_start
+	
 	for i in range(0, _iteration_num):
 		q = random.randint(q_lower_bound, q_upper_bound)
 		
@@ -82,5 +87,19 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			removal_rewards[remove_func_idx] += _reward_adds[1]
 			insertion_rewards[insertion_func_idx] += _reward_adds[1]
 		else:
-			# TODO: simulated annealing logic
-			pass
+			delta_objective_cost = s_p.objective_cost - s.objective_cost
+			accept_ratio = math.exp((-1 * delta_objective_cost) / t_current)
+			accept_random = random.random()
+			if accept_random <= accept_ratio:
+				s = s_p.copy()
+				removal_rewards[remove_func_idx] += _reward_adds[2]
+				insertion_rewards[insertion_func_idx] += _reward_adds[2]
+		
+		if i + 1 % _segment_num == 0:
+			assert len(w_removal) == len(removal_rewards) and len(removal_rewards) == len(removal_theta)
+			w_removal = [(1 - _r) * origin_w + _r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
+			
+			assert len(w_insertion) == len(insertion_rewards) and len(insertion_rewards) == len(insertion_theta)
+			w_insertion = [(1 - _r) * origin_w + _r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
+				
+		t_current *= _c
