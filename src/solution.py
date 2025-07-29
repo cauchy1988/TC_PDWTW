@@ -27,7 +27,8 @@ class PDWTWSolution(Solution):
 		
 		self._vehicleBank = set([vehicle_id for vehicle_id in meta_obj.vehicles])
 		
-		self._objective_cost = 0.0 + self.meta_obj.gama * len(self.request_bank)
+		self._distanceCost = 0.0
+		self._timeCost = 0.0
 	
 	def copy(self):
 		new_obj = PDWTWSolution(self.meta_obj)
@@ -37,7 +38,9 @@ class PDWTWSolution(Solution):
 		new_obj._requestIdToVehicleId = self.request_id_to_vehicle_id.copy()
 		new_obj._nodeIdToVehicleId = self.node_id_to_vehicle_id.copy()
 		new_obj._vehicleBank = self.vehicle_bank.copy()
-		self._objective_cost = self.objective_cost
+		
+		new_obj._distanceCost = self._distanceCost
+		new_obj._timeCost = self._timeCost
 		
 		return new_obj
 		
@@ -118,10 +121,11 @@ class PDWTWSolution(Solution):
 		return path_obj.get_node_start_service_time(node_id)
 	
 	def _update_objective_cost_all(self):
-		self._objective_cost = 0.0
+		self._distanceCost = 0.0
+		self._timeCost = 0.0
 		for vehicle_id in self.paths:
-			self._objective_cost += self.meta_obj.alpha * self.paths[vehicle_id].whole_distance_cost + self.meta_obj.beta * self.paths[vehicle_id].whole_time_cost
-		self._objective_cost += self.meta_obj.gama * len(self.request_bank)
+			self._distanceCost += self.paths[vehicle_id].whole_distance_cost
+			self._timeCost += self.paths[vehicle_id].whole_time_cost
 	
 	@property
 	def meta_obj(self):
@@ -148,6 +152,18 @@ class PDWTWSolution(Solution):
 		return self._vehicleBank
 	
 	@property
+	def distance_cost(self):
+		return self._distanceCost
+	
+	@property
+	def time_cost(self):
+		return self._timeCost
+	
+	@property
 	def objective_cost(self):
-		return self._objective_cost
+		return self.meta_obj.alpha * self._distanceCost + self.meta_obj.beta * self._timeCost +  self.meta_obj.gama * len(self.request_bank)
+	
+	@property
+	def objective_cost_without_request_bank(self):
+		return self.meta_obj.alpha * self.distance_cost + self.meta_obj.beta * self.time_cost
 	

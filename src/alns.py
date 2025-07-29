@@ -58,7 +58,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	s_best = initial_solution.copy()
 	s = initial_solution.copy()
 
-	t_start = _compute_initial_temperature(initial_solution.objective_cost, _w, _p)
+	t_start = _compute_initial_temperature(initial_solution.objective_cost_without_request_bank, _w, _p)
 	t_current = t_start
 	
 	for i in range(0, _iteration_num):
