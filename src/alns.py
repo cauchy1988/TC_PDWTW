@@ -17,6 +17,8 @@ _ep_tion = 0.4
 _w = 0.05
 _p = 0.5
 
+_initial_weight = 1
+
 _c = 0.99975
 _r = 0.1
 _segment_num = 100
@@ -43,13 +45,13 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	q_upper_bound = min(100, int(_ep_tion * requests_num))
 	q_lower_bound = 4
 	
-	w_removal = [_w, _w, _w]
+	w_removal = [_initial_weight, _initial_weight, _initial_weight]
 	removal_function_list = [shaw_removal, random_removal, worst_removal]
 	removal_rewards = [0, 0, 0]
 	removal_theta = [0, 0, 0]
 	
 	m = len(initial_solution.paths) + len(initial_solution.vehicle_bank)
-	w_insertion = [_w, _w, _w, _w, _w]
+	w_insertion = [_initial_weight, _initial_weight, _initial_weight, _initial_weight, _initial_weight]
 	insertion_function_list = [basic_greedy_insertion, regret_insertion_wrapper(2), regret_insertion_wrapper(3),
 	                           regret_insertion_wrapper(4), regret_insertion_wrapper(m)]
 	insertion_rewards = [0, 0, 0, 0, 0]
