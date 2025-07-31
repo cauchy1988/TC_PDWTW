@@ -17,6 +17,7 @@ _ep_tion = 0.4
 _w = 0.05
 _p = 0.5
 
+# this parameter seems not to be set in the paper
 _initial_weight = 1
 
 _c = 0.99975
@@ -115,5 +116,10 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			
 			assert len(w_insertion) == len(insertion_rewards) and len(insertion_rewards) == len(insertion_theta)
 			w_insertion = [(1 - _r) * origin_w + _r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
-				
+
+			removal_rewards = [0, 0, 0]
+			removal_theta = [0, 0, 0]
+			insertion_rewards = [0, 0, 0, 0]
+			insertion_theta = [0, 0, 0, 0]
+
 		t_current *= _c
