@@ -110,7 +110,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		if is_accepted:
 			accepted_solution_set.add(s_p.finger_print)
 		
-		if i + 1 % _segment_num == 0:
+		if ((i + 1) % _segment_num) == 0:
 			assert len(w_removal) == len(removal_rewards) and len(removal_rewards) == len(removal_theta)
 			w_removal = [(1 - _r) * origin_w + _r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
 			

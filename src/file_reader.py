@@ -6,10 +6,12 @@
 # @Software: PyCharm
 
 import abc
+from abc import ABC
+
 from meta import Meta
 
 
-class FileReader:
+class FileReader(ABC):
 	def __init__(self):
 		pass
 	
