@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2025/7/25 11:49
-# @Author  : Tang Chao
-# @File    : alns.py
+# @Author: Tang Chao
+# @File: alns.py
 # @Software: PyCharm
 from meta import Meta
 from solution import PDWTWSolution
@@ -62,6 +62,8 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 
 	t_start = _compute_initial_temperature(initial_solution.objective_cost_without_request_bank, _w, _p)
 	t_current = t_start
+
+	accepted_solution_set = set()
 	
 	for i in range(0, _iteration_num):
 		q = random.randint(q_lower_bound, q_upper_bound)
@@ -76,26 +78,36 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		remove_func(meta_obj, s_p, q)
 		insertion_func(meta_obj, s_p, q)
 		
-		# TODO: check accepted solution
-		
+		if s_p.finger_print in accepted_solution_set:
+			continue
+
+		is_new_best = False
 		if s_p.objective_cost < s_best.objective_cost:
+			is_new_best = True
 			s_best = s_p.copy()
 			removal_rewards[remove_func_idx] += _reward_adds[0]
 			insertion_rewards[insertion_func_idx] += _reward_adds[0]
 
 		# accept logic
+		is_accepted = False
 		if s_p.objective_cost <= s.objective_cost:
+			is_accepted = True
 			s = s_p.copy()
-			removal_rewards[remove_func_idx] += _reward_adds[1]
-			insertion_rewards[insertion_func_idx] += _reward_adds[1]
+			if not is_new_best:
+				removal_rewards[remove_func_idx] += _reward_adds[1]
+				insertion_rewards[insertion_func_idx] += _reward_adds[1]
 		else:
 			delta_objective_cost = s_p.objective_cost - s.objective_cost
 			accept_ratio = math.exp((-1 * delta_objective_cost) / t_current)
 			accept_random = random.random()
 			if accept_random <= accept_ratio:
+				is_accepted = True
 				s = s_p.copy()
 				removal_rewards[remove_func_idx] += _reward_adds[2]
 				insertion_rewards[insertion_func_idx] += _reward_adds[2]
+
+		if is_accepted:
+			accepted_solution_set.add(s_p.finger_print)
 		
 		if i + 1 % _segment_num == 0:
 			assert len(w_removal) == len(removal_rewards) and len(removal_rewards) == len(removal_theta)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2025/7/18 23:04
-# @Author  : Tang Chao
-# @File    : vehicle.py
+# @Author: Tang Chao
+# @File: vehicle.py
 # @Software: PyCharm
 
 class Vehicle:

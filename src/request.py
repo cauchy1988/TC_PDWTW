@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2025/7/18 22:45
-# @Author  : Tang Chao
-# @File    : request.py
+# @Author: Tang Chao
+# @File: request.py
 # @Software: PyCharm
 
 class Request:

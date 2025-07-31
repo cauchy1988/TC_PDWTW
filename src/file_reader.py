@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2025/7/19 13:18
-# @Author  : Tang Chao
-# @File    : file_reader.py
+# @Author: Tang Chao
+# @File: file_reader.py
 # @Software: PyCharm
 
 import abc

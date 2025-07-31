@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2025/7/21 21:42
-# @Author  : Tang Chao
-# @File    : insertion.py
+# @Author: Tang Chao
+# @File: insertion.py
 # @Software: PyCharm
 from typing import Dict
 from meta import Meta

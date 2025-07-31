@@ -1,21 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2025/7/19 13:51
-# @Author  : Tang Chao
-# @File    : solution.py
+# @Author: Tang Chao
+# @File: solution.py
 # @Software: PyCharm
 import abc
+import hashlib
+from abc import ABC
 from typing import Dict
 from meta import Meta
 from path import Path
 
+def generate_solution_finger_print(paths: Dict[int, Path]) -> str:
+	assert paths is not None
 
-class Solution:
+	gen_list = []
+	for key, value in sorted(paths.items(), key=lambda x: x[0]):
+		assert paths[key] is not None
+		gen_list.append((key, paths[key].route))
+
+	return hashlib.sha256(str(gen_list).encode()).hexdigest()
+
+
+class Solution(ABC):
 	@abc.abstractmethod
 	def __init__(self, meta_obj: Meta):
 		pass
-	
-	
+
+
 class PDWTWSolution(Solution):
 	def __init__(self, meta_obj: Meta):
 		self._metaObj = meta_obj
@@ -29,7 +41,9 @@ class PDWTWSolution(Solution):
 		
 		self._distanceCost = 0.0
 		self._timeCost = 0.0
-	
+
+		self._fingerPrint = generate_solution_finger_print(self._paths)
+
 	def copy(self):
 		new_obj = PDWTWSolution(self.meta_obj)
 		for vehicle_id, the_path in self.paths.items():
@@ -41,6 +55,8 @@ class PDWTWSolution(Solution):
 		
 		new_obj._distanceCost = self._distanceCost
 		new_obj._timeCost = self._timeCost
+
+		new_obj._fingerPrint = self._fingerPrint
 		
 		return new_obj
 		
@@ -91,6 +107,7 @@ class PDWTWSolution(Solution):
 				self.vehicle_bank.add(vehicle_id)
 			
 			self._update_objective_cost_all()
+			self._fingerPrint = generate_solution_finger_print(self._paths)
 			
 	def insert_one_request_optimal(self, request_id: int, vehicle_id: int) -> bool:
 		assert request_id in self.request_bank
@@ -110,6 +127,7 @@ class PDWTWSolution(Solution):
 				self.vehicle_bank.remove(vehicle_id)
 				self.paths[vehicle_id] = the_path
 			self._update_objective_cost_all()
+			self._fingerPrint = generate_solution_finger_print(self._paths)
 		return ok
 	
 	def get_node_start_service_time_in_path(self, node_id: int):
@@ -158,6 +176,10 @@ class PDWTWSolution(Solution):
 	@property
 	def time_cost(self):
 		return self._timeCost
+
+	@property
+	def finger_print(self):
+		return self._fingerPrint
 	
 	@property
 	def objective_cost(self):

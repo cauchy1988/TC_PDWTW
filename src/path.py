@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2025/7/20 00:05
-# @Author  : Tang Chao
-# @File    : path.py
+# @Author: Tang Chao
+# @File: path.py
 # @Software: PyCharm
 from __future__ import annotations
 from meta import Meta
