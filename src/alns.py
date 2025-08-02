@@ -36,7 +36,7 @@ def _select_function_with_weight(funcs, weights):
 
 def _compute_initial_temperature(z0: float, w: float, p: float) -> float:
 	if p <= 0 or p >= 1:
-		raise ValueError("接受概率 p 必须在 (0,1) 范围内")
+		raise ValueError("receptive ratio p should be in the range (0,1)")
 	delta = w * z0
 	t_start = -delta / math.log(p)
 	return t_start
