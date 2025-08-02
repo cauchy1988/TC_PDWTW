@@ -25,6 +25,16 @@ _r = 0.1
 _segment_num = 100
 _reward_adds = [33, 9, 13]
 
+_eta = 0.025
+
+def _objective_noise_wrapper(max_distance: float, use_noise: bool):
+	def _objective_noise(cost: float):
+		if use_noise:
+			noise = _eta * max_distance
+			return max(0.0, random.uniform(-noise, noise) + cost)
+		return cost
+	return _objective_noise
+
 def _select_function_with_weight(funcs, weights):
 	selected_index = random.choices(
 		range(len(funcs)),
@@ -57,7 +67,14 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	                           regret_insertion_wrapper(4), regret_insertion_wrapper(m)]
 	insertion_rewards = [0, 0, 0, 0, 0]
 	insertion_theta = [0, 0, 0, 0, 0]
-	
+
+	# part 3.6 in the paper
+	w_noise = [_initial_weight, _initial_weight]
+	noise_rewards = [0, 0]
+	noise_theta = [0, 0]
+	max_distance = meta_obj.get_max_distance()
+	noise_function_list = [_objective_noise_wrapper(max_distance, False), _objective_noise_wrapper(max_distance, True)]
+
 	s_best = initial_solution.copy()
 	s = initial_solution.copy()
 
@@ -71,9 +88,12 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		
 		remove_func, remove_func_idx = _select_function_with_weight(removal_function_list, w_removal)
 		insertion_func, insertion_func_idx = _select_function_with_weight(insertion_function_list, w_insertion)
+
+		noise_func, noise_func_idx = _select_function_with_weight(noise_function_list, w_noise)
 		
 		removal_theta[remove_func_idx] += 1
 		insertion_theta[insertion_func_idx] += 1
+		noise_theta[noise_func_idx] += 1
 		
 		s_p = s.copy()
 		remove_func(meta_obj, s_p, q)

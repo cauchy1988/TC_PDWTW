@@ -26,6 +26,9 @@ class Meta:
 		self._alpha = 1.0
 		self._beta = 1.0
 		self._gama = 1000000000.0
+
+	def get_max_distance(self):
+		return max((v for d in self.distances.values() for v in d.values()), default=None)
 		
 	@property
 	def distances(self):
