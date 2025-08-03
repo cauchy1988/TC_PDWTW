@@ -159,7 +159,7 @@ class Path:
 		if 0 == len(new_path_list):
 			return False, 0, 0, None
 		
-		new_path_list.sort(key=lambda item: (self.meta_obj.alpha * item[0], self.meta_obj.beta * item[1]))
+		new_path_list.sort(key=lambda item: (self.meta_obj.parameters.alpha * item[0], self.meta_obj.parameters.beta * item[1]))
 		return True, new_path_list[0][0], new_path_list[0][1], new_path_list[0][2]
 	
 	def try_to_remove_request(self, request_id: int) -> (float, float):

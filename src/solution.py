@@ -189,7 +189,7 @@ class PDWTWSolution(Solution):
 		
 		distance_diff, time_diff = copied_path.try_to_remove_request(request_id)
 		
-		return self.meta_obj.alpha * distance_diff + self.meta_obj.beta * time_diff
+		return self.meta_obj.parameters.alpha * distance_diff + self.meta_obj.parameters.beta * time_diff
 	
 	def cost_if_insert_request_to_vehicle_path(self, request_id: int, vehicle_id: int) -> (bool, float):
 		assert request_id in self.request_bank and (vehicle_id in self.vehicle_bank or vehicle_id in self.paths)
@@ -204,7 +204,7 @@ class PDWTWSolution(Solution):
 		if not ok:
 			return False, 0.0
 		
-		return True, self.meta_obj.alpha * distance_diff + self.meta_obj.beta * time_diff
+		return True, self.meta_obj.parameters.alpha * distance_diff + self.meta_obj.parameters.beta * time_diff
 	
 	def remove_requests(self, request_id_set):
 		for request_id in request_id_set:
@@ -303,9 +303,9 @@ class PDWTWSolution(Solution):
 	
 	@property
 	def objective_cost(self):
-		return self.meta_obj.alpha * self._distanceCost + self.meta_obj.beta * self._timeCost + self.meta_obj.gama * len(
+		return self.meta_obj.parameters.alpha * self._distanceCost + self.meta_obj.parameters.beta * self._timeCost + self.meta_obj.parameters.gama * len(
 			self.request_bank)
 	
 	@property
 	def objective_cost_without_request_bank(self):
-		return self.meta_obj.alpha * self.distance_cost + self.meta_obj.beta * self.time_cost
+		return self.meta_obj.parameters.alpha * self.distance_cost + self.meta_obj.parameters.beta * self.time_cost

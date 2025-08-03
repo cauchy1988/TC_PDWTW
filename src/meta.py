@@ -5,13 +5,17 @@
 # @File: meta.py
 # @Software: PyCharm
 from typing import Dict
+from parameters import Parameters
 from node import Node
 from request import Request
 from vehicle import Vehicle
 
 
 class Meta:
-	def __init__(self):
+	def __init__(self, parameters: Parameters):
+		# running parameters
+		self.parameters = parameters
+		
 		# first_node_id -> {second_node_id -> distance between them}
 		self._distances: Dict[int, Dict[int, float]] = {}
 		# node_id -> Node
@@ -22,10 +26,6 @@ class Meta:
 		self._vehicles: Dict[int, Vehicle] = {}
 		# vehicle_id -> {first_node_id -> {second_node_id -> run_time}}
 		self._vehicleRunBetweenNodesTime: Dict[int, Dict[int, Dict[int, float]]] = {}
-		
-		self._alpha = 1.0
-		self._beta = 1.0
-		self._gama = 1000000000.0
 
 	def get_max_distance(self):
 		return max((v for d in self.distances.values() for v in d.values()), default=None)
@@ -49,17 +49,4 @@ class Meta:
 	@property
 	def vehicle_run_between_nodes_time(self):
 		return self._vehicleRunBetweenNodesTime
-	
-	@property
-	def alpha(self):
-		return self._alpha
-	
-	@property
-	def beta(self):
-		return self._beta
-
-	@property
-	def gama(self):
-		return self._gama
-	
 	

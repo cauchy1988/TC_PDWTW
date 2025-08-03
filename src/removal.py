@@ -8,14 +8,6 @@ from meta import Meta
 from solution import PDWTWSolution, InnerDictForNormalization, generate_normalization_dict
 import random
 
-_shaw_param_1 = 9.0
-_shaw_param_2 = 3.0
-_shaw_param_3 = 3.0
-_shaw_param_4 = 5.0
-
-_p = 6
-_p_worst = 3
-
 '''
 def big_r_function(meta_obj: Meta, one_solution: PDWTWSolution, request_id: int):
 	request_id_obj = meta_obj.requests[request_id]
@@ -51,7 +43,7 @@ def big_r_function(meta_obj: Meta, one_solution: PDWTWSolution, request_id: int)
 '''
 
 
-def big_r_function(norm_obj: InnerDictForNormalization, request_id: int):
+def big_r_function(meta_obj, request_id: int, norm_obj: InnerDictForNormalization):
 	
 	def _nest_big_r_function(another_request_id: int):
 		# critical declaration!
@@ -60,10 +52,10 @@ def big_r_function(norm_obj: InnerDictForNormalization, request_id: int):
 		if request_id > another_request_id:
 			request_id, another_request_id = another_request_id, another_request_id
 		
-		return _shaw_param_1 * (norm_obj.distance_pick_dict[request_id][another_request_id] + norm_obj.distance_delivery_dict[request_id][another_request_id]) + \
-				_shaw_param_2 * (norm_obj.start_time_diff_pick_dict[request_id][another_request_id] + norm_obj.start_time_diff_delivery_dict[request_id][another_request_id]) + \
-				_shaw_param_3 * norm_obj.load_diff_dict[request_id][another_request_id] + \
-				_shaw_param_4 * norm_obj.vehicle_set_diff_dict[request_id][another_request_id]
+		return meta_obj.parameters.shaw_param_1 * (norm_obj.distance_pick_dict[request_id][another_request_id] + norm_obj.distance_delivery_dict[request_id][another_request_id]) + \
+				meta_obj.parameters.shaw_param_2 * (norm_obj.start_time_diff_pick_dict[request_id][another_request_id] + norm_obj.start_time_diff_delivery_dict[request_id][another_request_id]) + \
+				meta_obj.parameters.shaw_param_3 * norm_obj.load_diff_dict[request_id][another_request_id] + \
+				meta_obj.parameters.shaw_param_4 * norm_obj.vehicle_set_diff_dict[request_id][another_request_id]
 	
 	return _nest_big_r_function
 
@@ -80,9 +72,9 @@ def shaw_removal(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 	while len(big_d) < q:
 		r = random.sample(big_d, 1)[0]
 		big_l = list(set(solution_request_list) - big_d)
-		big_l.sort(key=big_r_function(norm_obj, r))
+		big_l.sort(key=big_r_function(meta_obj, r, norm_obj))
 		y = random.random()
-		big_d = big_d | {big_l[int((y ** _p) * len(big_l))]}
+		big_d = big_d | {big_l[int((y ** meta_obj.parameters.p) * len(big_l))]}
 	
 	one_solution.remove_requests(big_d)
 
@@ -106,6 +98,6 @@ def worst_removal(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 		assert len(big_l) > 0
 		big_l.sort(key=one_solution.cost_if_remove_request, reverse=True)
 		y = random.random()
-		r = big_l[int((y ** _p_worst) * len(big_l))]
+		r = big_l[int((y ** meta_obj.parameters.p_worst) * len(big_l))]
 		one_solution.remove_requests({r})
 		q = q - 1
