@@ -12,11 +12,7 @@ from solution import PDWTWSolution
 # bad design in order not to add fuck logic chain into the functions related to noise, chapter 3.6 in the original paper
 global_noise_func = None
 
-_unlimited_float = 10000000000000000.0
-_unlimited_float_bound = _unlimited_float + 100.0
-
-
-def _get_request_vehicle_cost(one_solution: PDWTWSolution) -> Dict[int, Dict[int, float]]:
+def _get_request_vehicle_cost(meta_obj: Meta, one_solution: PDWTWSolution) -> Dict[int, Dict[int, float]]:
 	request_vehicle_cost: Dict[int, Dict[int, float]] = {}
 	vehicles = [vehicle_id for vehicle_id in one_solution.vehicle_bank] + \
 	           [vehicle_id for vehicle_id, _ in one_solution.paths]
@@ -24,7 +20,7 @@ def _get_request_vehicle_cost(one_solution: PDWTWSolution) -> Dict[int, Dict[int
 		for vehicle_id in vehicles:
 			ok, cost = one_solution.cost_if_insert_request_to_vehicle_path(request_id, vehicle_id)
 			if not ok:
-				cost = _unlimited_float_bound
+				cost = meta_obj.parameters.unlimited_float_bound
 			if request_id not in request_vehicle_cost:
 				request_vehicle_cost[request_id] = {}
 			request_vehicle_cost[request_id][vehicle_id] = global_noise_func(cost) if not ok and callable(global_noise_func) else cost
@@ -32,13 +28,14 @@ def _get_request_vehicle_cost(one_solution: PDWTWSolution) -> Dict[int, Dict[int
 	return request_vehicle_cost
 
 
-def _update_request_vehicle_cost(already_inserted_request_id: int, already_inserted_vehicle_path: int,
-                                 request_vehicle_cost: Dict[int, Dict[int, float]], one_solution: PDWTWSolution):
+def _update_request_vehicle_cost(meta_obj: Meta, already_inserted_vehicle_path: int,
+                                 request_vehicle_cost: Dict[int, Dict[int, float]], one_solution: PDWTWSolution,
+                                 already_inserted_request_id: int):
 	del request_vehicle_cost[already_inserted_request_id]
 	for request_id, vehicle_id_dict in request_vehicle_cost.items():
 		ok, cost = one_solution.cost_if_insert_request_to_vehicle_path(request_id, already_inserted_vehicle_path)
 		if not ok:
-			cost = _unlimited_float_bound
+			cost = meta_obj.parameters.unlimited_float_bound
 		vehicle_id_dict[already_inserted_request_id] = global_noise_func(cost) if not ok and callable(global_noise_func) else cost
 
 
@@ -47,9 +44,9 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 	assert meta_obj is not None
 	
 	qq = min(len(one_solution.request_bank), q)
-	request_vehicle_cost = _get_request_vehicle_cost(one_solution)
+	request_vehicle_cost = _get_request_vehicle_cost(meta_obj, one_solution)
 	while qq > 0:
-		minimum_cost = _unlimited_float_bound
+		minimum_cost = meta_obj.parameters.unlimited_float_bound
 		request_id_for_insertion = -1
 		vehicle_id_for_insertion = -1
 		for request_id, vehicle_id_dict in request_vehicle_cost.items():
@@ -59,13 +56,13 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 					request_id_for_insertion = request_id
 					vehicle_id_for_insertion = vehicle_id
 		
-		if minimum_cost > _unlimited_float:
+		if minimum_cost > meta_obj.parameters.unlimited_float:
 			break
 		ok = one_solution.insert_one_request_optimal(request_id_for_insertion, vehicle_id_for_insertion)
 		assert ok
 		
-		_update_request_vehicle_cost(request_id_for_insertion, vehicle_id_for_insertion, request_vehicle_cost,
-		                             one_solution)
+		_update_request_vehicle_cost(meta_obj, vehicle_id_for_insertion, request_vehicle_cost, one_solution,
+		                             request_id_for_insertion)
 		qq = qq - 1
 
 
@@ -79,7 +76,7 @@ def regret_insertion_wrapper(k: int):
 		assert k <= total_vehicle_num
 		
 		qq = min(len(one_solution.request_bank), q)
-		request_vehicle_cost = _get_request_vehicle_cost(one_solution)
+		request_vehicle_cost = _get_request_vehicle_cost(meta_obj, one_solution)
 		while qq > 0:
 			request_vehicle_list: Dict[int, list] = {}
 			request_k_cost_list = []
@@ -97,7 +94,7 @@ def regret_insertion_wrapper(k: int):
 			
 			j = 0
 			while j < len(request_k_cost_list):
-				if request_vehicle_list[request_k_cost_list[j][0]][1] <= _unlimited_float:
+				if request_vehicle_list[request_k_cost_list[j][0]][1] <= meta_obj.parameters.unlimited_float:
 					break
 				j = j + 1
 			
@@ -109,7 +106,8 @@ def regret_insertion_wrapper(k: int):
 			ok = one_solution.insert_one_request_optimal(request_id_for_insertion, vehicle_id_for_insertion)
 			assert ok
 			
-			_update_request_vehicle_cost(request_id_for_insertion, vehicle_id_for_insertion, request_vehicle_cost, one_solution)
+			_update_request_vehicle_cost(meta_obj, vehicle_id_for_insertion, request_vehicle_cost, one_solution,
+			                             request_id_for_insertion)
 			qq = qq - 1
 		
 		return _regret_k_insertion

@@ -36,6 +36,9 @@ def _compute_initial_temperature(z0: float, w: float, p: float) -> float:
 	t_start = -delta / math.log(p)
 	return t_start
 
+def _assert_len_equal(w_list, reward_list, theta_list):
+	assert len(w_list) == len(reward_list) and len(theta_list) == len(w_list)
+
 def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWSolution):
 	requests_num = len(meta_obj.requests)
 	q_upper_bound = min(100, int(meta_obj.parameters.ep_tion * requests_num))
@@ -123,13 +126,13 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			accepted_solution_set.add(s_p.finger_print)
 		
 		if ((i + 1) % meta_obj.parameters.segment_num) == 0:
-			assert len(w_removal) == len(removal_rewards) and len(removal_rewards) == len(removal_theta)
+			_assert_len_equal(w_removal, removal_theta, removal_rewards)
 			w_removal = [(1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
 			
-			assert len(w_insertion) == len(insertion_rewards) and len(insertion_rewards) == len(insertion_theta)
+			_assert_len_equal(w_insertion, insertion_rewards, insertion_theta)
 			w_insertion = [(1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
 			
-			assert len(w_noise) == len(noise_rewards) and len(noise_rewards) == len(noise_theta)
+			_assert_len_equal(w_noise, noise_rewards, noise_theta)
 			w_noise = [(1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_noise / new_theta) for origin_w, new_noise, new_theta in zip(w_noise, noise_rewards, noise_theta)]
 
 			removal_rewards = [0, 0, 0]
