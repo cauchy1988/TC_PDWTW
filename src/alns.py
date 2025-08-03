@@ -8,6 +8,7 @@ from meta import Meta
 from solution import PDWTWSolution
 from removal import *
 from insertion import *
+import insertion
 import random
 import math
 
@@ -89,7 +90,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		remove_func, remove_func_idx = _select_function_with_weight(removal_function_list, w_removal)
 		insertion_func, insertion_func_idx = _select_function_with_weight(insertion_function_list, w_insertion)
 
-		noise_func, noise_func_idx = _select_function_with_weight(noise_function_list, w_noise)
+		insertion.global_noise_func, noise_func_idx = _select_function_with_weight(noise_function_list, w_noise)
 		
 		removal_theta[remove_func_idx] += 1
 		insertion_theta[insertion_func_idx] += 1
@@ -108,6 +109,8 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			s_best = s_p.copy()
 			removal_rewards[remove_func_idx] += _reward_adds[0]
 			insertion_rewards[insertion_func_idx] += _reward_adds[0]
+			
+			noise_theta[noise_func_idx] += _reward_adds[0]
 
 		# accept logic
 		is_accepted = False
@@ -117,6 +120,8 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			if not is_new_best:
 				removal_rewards[remove_func_idx] += _reward_adds[1]
 				insertion_rewards[insertion_func_idx] += _reward_adds[1]
+				
+				noise_theta[noise_func_idx] += _reward_adds[1]
 		else:
 			delta_objective_cost = s_p.objective_cost - s.objective_cost
 			accept_ratio = math.exp((-1 * delta_objective_cost) / t_current)
@@ -126,6 +131,8 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 				s = s_p.copy()
 				removal_rewards[remove_func_idx] += _reward_adds[2]
 				insertion_rewards[insertion_func_idx] += _reward_adds[2]
+				
+				noise_theta[noise_func_idx] += _reward_adds[2]
 
 		if is_accepted:
 			accepted_solution_set.add(s_p.finger_print)
@@ -136,10 +143,18 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			
 			assert len(w_insertion) == len(insertion_rewards) and len(insertion_rewards) == len(insertion_theta)
 			w_insertion = [(1 - _r) * origin_w + _r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
+			
+			assert len(w_noise) == len(noise_rewards) and len(noise_rewards) == len(noise_theta)
+			w_noise = [(1 - _r) * origin_w + _r * (new_noise / new_theta) for origin_w, new_noise, new_theta in zip(w_noise, noise_rewards, noise_theta)]
 
 			removal_rewards = [0, 0, 0]
 			removal_theta = [0, 0, 0]
+			
 			insertion_rewards = [0, 0, 0, 0]
 			insertion_theta = [0, 0, 0, 0]
+			
+			# optional
+			noise_rewards = [0, 0]
+			noise_theta = [0, 0]
 
 		t_current *= _c

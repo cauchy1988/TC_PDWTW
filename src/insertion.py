@@ -8,6 +8,8 @@ from typing import Dict
 from meta import Meta
 from solution import PDWTWSolution
 
+global_noise_func = None
+
 _unlimited_float = 10000000000000000.0
 _unlimited_float_bound = _unlimited_float + 100.0
 
