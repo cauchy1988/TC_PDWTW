@@ -4,10 +4,12 @@
 # @Author: Tang Chao
 # @File: insertion.py
 # @Software: PyCharm
+from pkgutil import get_loader
 from typing import Dict
 from meta import Meta
 from solution import PDWTWSolution
 
+# bad design in order not to add fuck logic chain into the functions related to noise, chapter 3.6 in the original paper
 global_noise_func = None
 
 _unlimited_float = 10000000000000000.0
@@ -25,7 +27,7 @@ def _get_request_vehicle_cost(one_solution: PDWTWSolution) -> Dict[int, Dict[int
 				cost = _unlimited_float_bound
 			if request_id not in request_vehicle_cost:
 				request_vehicle_cost[request_id] = {}
-			request_vehicle_cost[request_id][vehicle_id] = cost
+			request_vehicle_cost[request_id][vehicle_id] = global_noise_func(cost) if not ok and callable(global_noise_func) else cost
 	
 	return request_vehicle_cost
 
@@ -37,7 +39,7 @@ def _update_request_vehicle_cost(already_inserted_request_id: int, already_inser
 		ok, cost = one_solution.cost_if_insert_request_to_vehicle_path(request_id, already_inserted_vehicle_path)
 		if not ok:
 			cost = _unlimited_float_bound
-		vehicle_id_dict[already_inserted_request_id] = cost
+		vehicle_id_dict[already_inserted_request_id] = global_noise_func(cost) if not ok and callable(global_noise_func) else cost
 
 
 def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
