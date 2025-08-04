@@ -194,6 +194,9 @@ class PDWTWSolution(Solution):
 	def cost_if_insert_request_to_vehicle_path(self, request_id: int, vehicle_id: int) -> (bool, float):
 		assert request_id in self.request_bank and (vehicle_id in self.vehicle_bank or vehicle_id in self.paths)
 		
+		if vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
+			return False, 0.0
+		
 		if vehicle_id in self.paths:
 			the_path = self.paths[vehicle_id].copy()
 		else:
@@ -231,6 +234,10 @@ class PDWTWSolution(Solution):
 	
 	def insert_one_request_optimal(self, request_id: int, vehicle_id: int) -> bool:
 		assert request_id in self.request_bank
+		
+		if request_id not in self.meta_obj.requests[request_id].vehicle_set:
+			return False
+		
 		if vehicle_id in self.vehicle_bank:
 			the_path = Path(vehicle_id, self.meta_obj)
 		else:
