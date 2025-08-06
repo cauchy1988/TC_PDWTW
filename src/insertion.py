@@ -39,13 +39,13 @@ def _update_request_vehicle_cost(meta_obj: Meta, already_inserted_vehicle_path: 
 		vehicle_id_dict[already_inserted_request_id] = global_noise_func(cost) if not ok and callable(global_noise_func) else cost
 
 
-def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
+def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, insert_unlimited: bool):
 	assert q > 0
 	assert meta_obj is not None
 	
 	qq = min(len(one_solution.request_bank), q)
 	request_vehicle_cost = _get_request_vehicle_cost(meta_obj, one_solution)
-	while qq > 0:
+	while qq > 0 or insert_unlimited:
 		minimum_cost = meta_obj.parameters.unlimited_float_bound
 		request_id_for_insertion = -1
 		vehicle_id_for_insertion = -1
@@ -67,7 +67,7 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
 
 
 def regret_insertion_wrapper(k: int):
-	def _regret_k_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int):
+	def _regret_k_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, insert_unlimited: bool):
 		assert q > 0
 		assert k >= 2
 		assert meta_obj is not None
@@ -77,7 +77,7 @@ def regret_insertion_wrapper(k: int):
 		
 		qq = min(len(one_solution.request_bank), q)
 		request_vehicle_cost = _get_request_vehicle_cost(meta_obj, one_solution)
-		while qq > 0:
+		while qq > 0 or insert_unlimited:
 			request_vehicle_list: Dict[int, list] = {}
 			request_k_cost_list = []
 			for request_id, cost_dict in request_vehicle_cost.items():

@@ -39,7 +39,7 @@ def _compute_initial_temperature(z0: float, w: float, p: float) -> float:
 def _assert_len_equal(w_list, reward_list, theta_list):
 	assert len(w_list) == len(reward_list) and len(theta_list) == len(w_list)
 
-def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWSolution):
+def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWSolution, insert_unlimited: bool) -> PDWTWSolution:
 	requests_num = len(meta_obj.requests)
 	q_upper_bound = min(100, int(meta_obj.parameters.ep_tion * requests_num))
 	q_lower_bound = 4
@@ -86,7 +86,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		
 		s_p = s.copy()
 		remove_func(meta_obj, s_p, q)
-		insertion_func(meta_obj, s_p, q)
+		insertion_func(meta_obj, s_p, q, insert_unlimited)
 		
 		if s_p.finger_print in accepted_solution_set:
 			continue
@@ -146,3 +146,5 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			noise_theta = [0, 0]
 
 		t_current *= meta_obj.parameters.c
+		
+	return s_best
