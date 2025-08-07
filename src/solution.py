@@ -155,6 +155,8 @@ class PDWTWSolution(Solution):
 		self._paths: Dict[int, Path] = {}
 		self._requestBank = set([request_id for request_id in meta_obj.requests])
 		self._requestIdToVehicleId: Dict[int, int] = {}
+		
+		# only preserve pickup and delivery node id map
 		self._nodeIdToVehicleId: Dict[int, int] = {}
 		
 		self._vehicleBank = set([vehicle_id for vehicle_id in meta_obj.vehicles])
@@ -163,6 +165,12 @@ class PDWTWSolution(Solution):
 		self._timeCost = 0.0
 		
 		self._fingerPrint = generate_solution_finger_print(self._paths)
+		
+	def delete_vehicle_and_its_route(self, delete_vehicle_id: int):
+		assert delete_vehicle_id in self.paths or delete_vehicle_id in self.vehicle_bank
+		deleted_requests = set([request_id for request_id, vehicle_id in self.request_id_to_vehicle_id if delete_vehicle_id == vehicle_id])
+		self.remove_requests(deleted_requests)
+		self.vehicle_bank.remove(delete_vehicle_id)
 	
 	def copy(self):
 		new_obj = PDWTWSolution(self.meta_obj)

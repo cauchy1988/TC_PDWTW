@@ -39,3 +39,6 @@ class Parameters(object):
 		
 		self.unlimited_float = 10000000000000000.0
 		self.unlimited_float_bound = self.unlimited_float + 100.0
+		
+		self.theta = 25000
+		self.tau = 2000
