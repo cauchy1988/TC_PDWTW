@@ -6,39 +6,46 @@
 # @Software: PyCharm
 
 class Parameters(object):
-	def __init__(self):
-		self.alpha = 1.0
-		self.beta = 1.0
-		self.gama = 1000000000.0
-		
-		self.shaw_param_1 = 9.0
-		self.shaw_param_2 = 3.0
-		self.shaw_param_3 = 3.0
-		self.shaw_param_4 = 5.0
-		
-		self.p = 6
-		self.p_worst = 3
-		
-		self.w = 0.05
-		self.annealing_p = 0.5
-		
-		self.c = 0.99975
-		self.r = 0.1
-		
-		self.reward_adds = [33, 9, 13]
-		
-		self.eta = 0.025
-		
-		# this parameter seems not to be set in the paper
-		self.initial_weight = 1
-		
-		self.iteration_num = 25000
-		self.ep_tion = 0.4
-		
-		self.segment_num = 100
-		
-		self.unlimited_float = 10000000000000000.0
-		self.unlimited_float_bound = self.unlimited_float + 100.0
-		
-		self.theta = 25000
-		self.tau = 2000
+    def __init__(self, **kwargs):
+        self._params = {
+            "alpha": 1.0,
+            "beta": 1.0,
+            "gama": 1000000000.0,
+            "shaw_param_1": 9.0,
+            "shaw_param_2": 3.0,
+            "shaw_param_3": 3.0,
+            "shaw_param_4": 5.0,
+            "p": 6,
+            "p_worst": 3,
+            "w": 0.05,
+            "annealing_p": 0.5,
+            "c": 0.99975,
+            "r": 0.1,
+            "reward_adds": [33, 9, 13],
+            "eta": 0.025,
+            "initial_weight": 1,
+            "iteration_num": 25000,
+            "ep_tion": 0.4,
+            "segment_num": 100,
+            "unlimited_float": 10000000000000000.0,
+            "unlimited_float_bound": 10000000000000000.0 + 100.0,
+            "theta": 25000,
+            "tau": 2000
+        }
+        self._params.update(kwargs)
+
+    def __getattr__(self, name):
+        if name in self._params:
+            return self._params[name]
+        raise AttributeError(f"'Parameters' object has no attribute '{name}'")
+
+    def __setattr__(self, name, value):
+        if name == "_params":
+            super().__setattr__(name, value)
+        elif "_params" in self.__dict__ and name in self._params:
+            self._params[name] = value
+        else:
+            super().__setattr__(name, value)
+
+    def to_dict(self):
+        return dict(self._params)
