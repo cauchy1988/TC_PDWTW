@@ -7,37 +7,40 @@
 import copy
 import random
 
-from meta import Meta
 from solution import PDWTWSolution
-from vehicle import Vehicle
-
-
-def _add_one_same_vehicle(meta_obj: Meta, one_solution: PDWTWSolution):
-	assert meta_obj == one_solution.meta_obj
-	
-	# random check the similarity of any two vehicles
-	values = meta_obj.vehicles.values()
-	assert values
-	selected_two_values = random.choices(values, k=2)
-	assert selected_two_values[0].equals(selected_two_values[1])
-	
-	max_vehicle_id = max(meta_obj.vehicles.keys())
-	new_vehicle_id = max_vehicle_id + 1
-	
-	#update meta_obj
-	meta_obj.vehicles[new_vehicle_id] = Vehicle(new_vehicle_id, selected_two_values[0].capacity, selected_two_values[0].velocity, selected_two_values[0].startNodeId, selected_two_values[0].endNodeId)
-	meta_obj.vehicle_run_between_nodes_time[new_vehicle_id] = copy.deepcopy(meta_obj.vehicle_run_between_nodes_time[selected_two_values[0].identity])
-	# vehicles of a homogeneous fleet have the same start node and end node, so need not add new node to the Meta structure
-	
-	#update one_solution
-	one_solution.vehicle_bank.add(new_vehicle_id)
 
 # two stage algorithm, first to minimize the vehicle num, second to solve the problem
 # the vehicles described in the two stage algorithm in the paper should be in a homogeneous fleet
 def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSolution):
-	# cope with every request one by one
-		# if one ok, cope with next,
-		# if not ok, after _add_one_same_vehicle and continue the steps
+	# the first step : cope with every request one by one
+		# if one ok, cope with the next request still in the request bank,
+		# if not ok, after _add_one_same_vehicle and continue the loop
 	# now all the request have been arranged, delete the redundant/useless vehicles, the first step is completed
-	# it uses a's iterations
-	pass
+	# assume that the first step uses 'a' iterations totally
+	# then it will continue the second step:
+		#1、move away all the requests from the vehicle that has the maximum vehicle id and the vehicle itself from Meta structure and Solution structure
+		#2、rearrange the requests in the solution with the remaining vehicles
+			# use the modified ALNS algorithm(the total iteration num is set to 2000 transiently) to solve the problem
+			# if last 2000 iterations can not arrange all the requests in the request bank, then stop the algorithm loop
+			# else preserve the current Solution and goto #1 and repeat the steps
+		#total iteration number should be limited to (25000 - 'a')
+
+	requests_in_bank = one_solution.request_bank.copy()
+	
+	a_iteration_num = 0
+	new_vehicle_add_flag = False
+	while requests_in_bank:
+		a_iteration_num += 1
+		
+		current_request = requests_in_bank.pop(0)
+		if one_solution.insert_one_request_to_any_vehicle_route_optimal(current_request):
+			new_vehicle_add_flag = False
+			continue
+		else:
+			# it is impossible that the arrangement of a request is not successful after an insertion of a new vehicle
+			assert not new_vehicle_add_flag
+			one_solution.add_one_same_vehicle()
+			requests_in_bank.append(current_request)
+			new_vehicle_add_flag = True
+
+	

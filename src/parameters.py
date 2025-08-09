@@ -4,6 +4,8 @@
 # @Author  : Tang Chao
 # @File    : parameters.py
 # @Software: PyCharm
+import copy
+
 
 class Parameters(object):
     def __init__(self, **kwargs):
@@ -33,7 +35,11 @@ class Parameters(object):
             "tau": 2000
         }
         self._params.update(kwargs)
-
+        self._original_params = copy.deepcopy(self._params)  # Store original parameters for reset
+        
+    def reset(self):
+        self._params = copy.deepcopy(self._original_params)
+    
     def __getattr__(self, name):
         if name in self._params:
             return self._params[name]

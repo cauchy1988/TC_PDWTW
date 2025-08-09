@@ -58,7 +58,7 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, 
 		
 		if minimum_cost > meta_obj.parameters.unlimited_float:
 			break
-		ok = one_solution.insert_one_request_optimal(request_id_for_insertion, vehicle_id_for_insertion)
+		ok = one_solution.insert_one_request_to_one_vehicle_route_optimal(request_id_for_insertion, vehicle_id_for_insertion)
 		assert ok
 		
 		_update_request_vehicle_cost(meta_obj, vehicle_id_for_insertion, request_vehicle_cost, one_solution,
@@ -103,7 +103,7 @@ def regret_insertion_wrapper(k: int):
 			
 			request_id_for_insertion = request_k_cost_list[j][0]
 			vehicle_id_for_insertion = request_vehicle_list[request_id_for_insertion][0]
-			ok = one_solution.insert_one_request_optimal(request_id_for_insertion, vehicle_id_for_insertion)
+			ok = one_solution.insert_one_request_to_one_vehicle_route_optimal(request_id_for_insertion, vehicle_id_for_insertion)
 			assert ok
 			
 			_update_request_vehicle_cost(meta_obj, vehicle_id_for_insertion, request_vehicle_cost, one_solution,

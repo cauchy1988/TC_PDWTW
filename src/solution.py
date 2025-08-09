@@ -165,12 +165,21 @@ class PDWTWSolution(Solution):
 		self._timeCost = 0.0
 		
 		self._fingerPrint = generate_solution_finger_print(self._paths)
-		
+	
+	# this interface only use for problems with homogeneous fleet
+	def add_one_same_vehicle(self, one_vehicle_id: int = None):
+		new_vehicle_id = self.meta_obj.add_one_same_vehicle(one_vehicle_id)
+		# update one_solution
+		self.vehicle_bank.add(new_vehicle_id)
+	
+	# this interface only use for problems with homogeneous fleet
 	def delete_vehicle_and_its_route(self, delete_vehicle_id: int):
 		assert delete_vehicle_id in self.paths or delete_vehicle_id in self.vehicle_bank
 		deleted_requests = set([request_id for request_id, vehicle_id in self.request_id_to_vehicle_id if delete_vehicle_id == vehicle_id])
 		self.remove_requests(deleted_requests)
 		self.vehicle_bank.remove(delete_vehicle_id)
+		
+		self.meta_obj.delete_vehicle(delete_vehicle_id)
 	
 	def copy(self):
 		new_obj = PDWTWSolution(self.meta_obj)
@@ -240,10 +249,10 @@ class PDWTWSolution(Solution):
 			self._update_objective_cost_all()
 			self._fingerPrint = generate_solution_finger_print(self._paths)
 	
-	def insert_one_request_optimal(self, request_id: int, vehicle_id: int) -> bool:
+	def insert_one_request_to_one_vehicle_route_optimal(self, request_id: int, vehicle_id: int) -> bool:
 		assert request_id in self.request_bank
 		
-		if request_id not in self.meta_obj.requests[request_id].vehicle_set:
+		if vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
 			return False
 		
 		if vehicle_id in self.vehicle_bank:
@@ -264,6 +273,17 @@ class PDWTWSolution(Solution):
 			self._update_objective_cost_all()
 			self._fingerPrint = generate_solution_finger_print(self._paths)
 		return ok
+	
+	def insert_one_request_to_any_vehicle_route_optimal(self, request_id: int) -> bool:
+		assert request_id in self.request_bank
+		
+		vehicle_id_list = list(self.meta_obj.requests[request_id].vehicle_set & (self.vehicle_bank | list(self.paths.keys())))
+		
+		for vehicle_id in vehicle_id_list:
+			if self.insert_one_request_to_one_vehicle_route_optimal(request_id, vehicle_id):
+				return True
+		
+		return False
 	
 	def get_node_start_service_time_in_path(self, node_id: int):
 		assert node_id in self.node_id_to_vehicle_id
