@@ -8,10 +8,11 @@ import copy
 import random
 
 from solution import PDWTWSolution
+from alns import adaptive_large_neighbourhood_search
 
 # two stage algorithm, first to minimize the vehicle num, second to solve the problem
 # the vehicles described in the two stage algorithm in the paper should be in a homogeneous fleet
-def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSolution):
+def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSolution) -> PDWTWSolution:
 	# the first step : cope with every request one by one
 		# if one ok, cope with the next request still in the request bank,
 		# if not ok, after _add_one_same_vehicle and continue the loop
@@ -43,4 +44,29 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
 			requests_in_bank.append(current_request)
 			new_vehicle_add_flag = True
 
+	result_solution = one_solution.copy()
 	
+	total_iteration_num = a_iteration_num
+	while total_iteration_num <= one_solution.meta_obj.parameters.theta:
+		one_solution.delete_vehicle_and_its_route(one_solution.max_vehicle_id())
+		
+		one_solution.meta_obj.parameters.iteration_num = one_solution.meta_obj.parameters.tau
+		adaptive_large_neighbourhood_search(one_solution.meta_obj, one_solution, insert_unlimited=True)
+		
+		if not one_solution.request_bank:
+			result_solution = one_solution.copy()
+			total_iteration_num += one_solution.meta_obj.parameters.iteration_num
+		else:
+			break
+			
+	result_solution.meta_obj.parameters.reset()
+	return result_solution
+
+def two_stage_algorithm_in_homogeneous_fleet(initial_solution: PDWTWSolution) -> PDWTWSolution:
+	# the first stage
+	result_solution = first_stage_to_limit_vehicle_num_in_homogeneous_fleet(initial_solution)
+	
+	# the second stage
+	adaptive_large_neighbourhood_search(result_solution.meta_obj, result_solution, insert_unlimited=True)
+	
+	return result_solution

@@ -299,6 +299,13 @@ class PDWTWSolution(Solution):
 		for vehicle_id in self.paths:
 			self._distanceCost += self.paths[vehicle_id].whole_distance_cost
 			self._timeCost += self.paths[vehicle_id].whole_time_cost
+			
+	def max_vehicle_id(self):
+		if not self.paths and not self.vehicle_bank:
+			return None
+		max_vehicle_id =  max(max(self.paths.keys()), max(self.vehicle_bank))
+		assert max_vehicle_id == self.meta_obj.max_vehicle_id
+		return max_vehicle_id
 	
 	@property
 	def meta_obj(self):

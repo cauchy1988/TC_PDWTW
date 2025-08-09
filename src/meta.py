@@ -72,6 +72,11 @@ class Meta:
 
 	def get_max_distance(self):
 		return max((v for d in self.distances.values() for v in d.values()), default=None)
+	
+	def max_vehicle_id(self):
+		if not self.vehicles:
+			return None
+		return max(self.vehicles.keys())
 		
 	@property
 	def distances(self):
