@@ -14,6 +14,7 @@ import math
 
 def _objective_noise_wrapper(meta_obj: Meta, use_noise: bool, max_distance: float):
 	def _objective_noise(cost: float):
+		nonlocal meta_obj, max_distance
 		if use_noise:
 			noise = meta_obj.parameters.eta * max_distance
 			return max(0.0, random.uniform(-noise, noise) + cost)
@@ -21,6 +22,7 @@ def _objective_noise_wrapper(meta_obj: Meta, use_noise: bool, max_distance: floa
 	return _objective_noise
 
 def _select_function_with_weight(funcs, weights):
+	assert len(funcs) == len(weights)
 	selected_index = random.choices(
 		range(len(funcs)),
 		weights=weights,
@@ -30,6 +32,8 @@ def _select_function_with_weight(funcs, weights):
 	return funcs[selected_index], selected_index
 
 def _compute_initial_temperature(z0: float, w: float, p: float) -> float:
+	if z0 <= 0.0:
+		raise ValueError("initial cost z0 should be positive")
 	if p <= 0 or p >= 1:
 		raise ValueError("receptive ratio p should be in the range (0,1)")
 	delta = w * z0
@@ -43,8 +47,8 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	assert meta_obj is initial_solution.meta_obj
 	
 	requests_num = len(meta_obj.requests)
-	q_upper_bound = min(100, int(meta_obj.parameters.ep_tion * requests_num))
-	q_lower_bound = 4
+	q_upper_bound = min(meta_obj.parameters.remove_upper_bound, int(meta_obj.parameters.epsilon * requests_num))
+	q_lower_bound = meta_obj.parameters.remove_lower_bound
 	
 	w_removal = [meta_obj.parameters.initial_weight, meta_obj.parameters.initial_weight, meta_obj.parameters.initial_weight]
 	removal_function_list = [shaw_removal, random_removal, worst_removal]
@@ -80,6 +84,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		remove_func, remove_func_idx = _select_function_with_weight(removal_function_list, w_removal)
 		insertion_func, insertion_func_idx = _select_function_with_weight(insertion_function_list, w_insertion)
 
+		# it uses a global variable thus tests should not be in parallel!!!
 		insertion.global_noise_func, noise_func_idx = _select_function_with_weight(noise_function_list, w_noise)
 		
 		removal_theta[remove_func_idx] += 1
@@ -111,7 +116,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 				removal_rewards[remove_func_idx] += meta_obj.parameters.reward_adds[1]
 				insertion_rewards[insertion_func_idx] += meta_obj.parameters.reward_adds[1]
 				
-				noise_theta[noise_func_idx] += meta_obj.parameters.reward_adds[1]
+				noise_rewards[noise_func_idx] += meta_obj.parameters.reward_adds[1]
 		else:
 			delta_objective_cost = s_p.objective_cost - s.objective_cost
 			accept_ratio = math.exp((-1 * delta_objective_cost) / t_current)
@@ -122,26 +127,26 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 				removal_rewards[remove_func_idx] += meta_obj.parameters.reward_adds[2]
 				insertion_rewards[insertion_func_idx] += meta_obj.parameters.reward_adds[2]
 				
-				noise_theta[noise_func_idx] += meta_obj.parameters.reward_adds[2]
+				noise_rewards[noise_func_idx] += meta_obj.parameters.reward_adds[2]
 
 		if is_accepted:
 			accepted_solution_set.add(s_p.finger_print)
 		
 		if ((i + 1) % meta_obj.parameters.segment_num) == 0:
 			_assert_len_equal(w_removal, removal_theta, removal_rewards)
-			w_removal = [(1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
+			w_removal = [0 if new_theta <= 1e6 else (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
 			
 			_assert_len_equal(w_insertion, insertion_rewards, insertion_theta)
-			w_insertion = [(1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
+			w_insertion = [0 if new_theta <= 1e6 else (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
 			
 			_assert_len_equal(w_noise, noise_rewards, noise_theta)
-			w_noise = [(1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_noise / new_theta) for origin_w, new_noise, new_theta in zip(w_noise, noise_rewards, noise_theta)]
+			w_noise = [0 if new_theta <= 1e6 else (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_noise / new_theta) for origin_w, new_noise, new_theta in zip(w_noise, noise_rewards, noise_theta)]
 
 			removal_rewards = [0, 0, 0]
 			removal_theta = [0, 0, 0]
 			
-			insertion_rewards = [0, 0, 0, 0]
-			insertion_theta = [0, 0, 0, 0]
+			insertion_rewards = [0, 0, 0, 0, 0]
+			insertion_theta = [0, 0, 0, 0, 0]
 			
 			# optional
 			noise_rewards = [0, 0]

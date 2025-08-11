@@ -27,12 +27,15 @@ class Parameters(object):
             "eta": 0.025,
             "initial_weight": 1,
             "iteration_num": 25000,
-            "ep_tion": 0.4,
+            "epsilon": 0.4,
             "segment_num": 100,
             "unlimited_float": 10000000000000000.0,
             "unlimited_float_bound": 10000000000000000.0 + 100.0,
             "theta": 25000,
-            "tau": 2000
+            "tau": 2000,
+	        
+	        "remove_upper_bound": 100,
+	        "remove_lower_bound": 4
         }
         self._params.update(kwargs)
         self._original_params = copy.deepcopy(self._params)  # Store original parameters for reset
