@@ -4,7 +4,6 @@
 # @Author: Tang Chao
 # @File: insertion.py
 # @Software: PyCharm
-from pkgutil import get_loader
 from typing import Dict
 from meta import Meta
 from solution import PDWTWSolution
@@ -23,23 +22,23 @@ def _get_request_vehicle_cost(meta_obj: Meta, one_solution: PDWTWSolution) -> Di
 				cost = meta_obj.parameters.unlimited_float_bound
 			if request_id not in request_vehicle_cost:
 				request_vehicle_cost[request_id] = {}
-			request_vehicle_cost[request_id][vehicle_id] = global_noise_func(cost) if not ok and callable(global_noise_func) else cost
+			request_vehicle_cost[request_id][vehicle_id] = global_noise_func(cost) if global_noise_func is not None and callable(global_noise_func) and not ok else cost
 	
 	return request_vehicle_cost
 
 
 def _update_request_vehicle_cost(meta_obj: Meta, already_inserted_vehicle_path: int,
                                  request_vehicle_cost: Dict[int, Dict[int, float]], one_solution: PDWTWSolution,
-                                 already_inserted_request_id: int):
+                                 already_inserted_request_id: int) -> None:
 	del request_vehicle_cost[already_inserted_request_id]
 	for request_id, vehicle_id_dict in request_vehicle_cost.items():
 		ok, cost = one_solution.cost_if_insert_request_to_vehicle_path(request_id, already_inserted_vehicle_path)
 		if not ok:
 			cost = meta_obj.parameters.unlimited_float_bound
-		vehicle_id_dict[already_inserted_request_id] = global_noise_func(cost) if not ok and callable(global_noise_func) else cost
+		vehicle_id_dict[already_inserted_vehicle_path] = global_noise_func(cost) if global_noise_func is not None and callable(global_noise_func) and not ok else cost
 
 
-def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, insert_unlimited: bool):
+def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, insert_unlimited: bool) -> None:
 	assert q > 0
 	assert meta_obj is not None
 	
@@ -50,7 +49,7 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, 
 		request_id_for_insertion = -1
 		vehicle_id_for_insertion = -1
 		for request_id, vehicle_id_dict in request_vehicle_cost.items():
-			for vehicle_id, cost in vehicle_id_dict:
+			for vehicle_id, cost in vehicle_id_dict.items():
 				if cost < minimum_cost:
 					minimum_cost = cost
 					request_id_for_insertion = request_id
@@ -67,7 +66,7 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, 
 
 
 def regret_insertion_wrapper(k: int):
-	def _regret_k_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, insert_unlimited: bool):
+	def _regret_k_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int, insert_unlimited: bool) -> None:
 		assert q > 0
 		assert k >= 2
 		assert meta_obj is not None
@@ -86,15 +85,16 @@ def regret_insertion_wrapper(k: int):
 					request_vehicle_list[request_id].append((vehicle_id, cost))
 				request_vehicle_list[request_id].sort(key=lambda tp: tp[1])
 				k_cost_sum = 0.0
+				assert len(request_vehicle_list[request_id]) >= k
 				for i in range(1, k):
 					k_cost_sum = k_cost_sum + (
-							request_vehicle_list[request_id][i] - request_vehicle_list[request_id][i])
+							request_vehicle_list[request_id][i][1] - request_vehicle_list[request_id][0][1])
 				request_k_cost_list.append((request_id, k_cost_sum))
 			request_k_cost_list.sort(key=lambda tp: tp[1], reverse=True)
 			
 			j = 0
 			while j < len(request_k_cost_list):
-				if request_vehicle_list[request_k_cost_list[j][0]][1] <= meta_obj.parameters.unlimited_float:
+				if request_vehicle_list[request_k_cost_list[j][0]][0][1] <= meta_obj.parameters.unlimited_float:
 					break
 				j = j + 1
 			
@@ -102,7 +102,7 @@ def regret_insertion_wrapper(k: int):
 				break
 			
 			request_id_for_insertion = request_k_cost_list[j][0]
-			vehicle_id_for_insertion = request_vehicle_list[request_id_for_insertion][0]
+			vehicle_id_for_insertion = request_vehicle_list[request_id_for_insertion][0][0]
 			ok = one_solution.insert_one_request_to_one_vehicle_route_optimal(request_id_for_insertion, vehicle_id_for_insertion)
 			assert ok
 			
@@ -110,4 +110,4 @@ def regret_insertion_wrapper(k: int):
 			                             request_id_for_insertion)
 			qq = qq - 1
 		
-		return _regret_k_insertion
+	return _regret_k_insertion
