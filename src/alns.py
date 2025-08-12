@@ -13,16 +13,17 @@ import random
 import math
 
 def _objective_noise_wrapper(meta_obj: Meta, use_noise: bool, max_distance: float):
-	def _objective_noise(cost: float):
+	def _objective_noise(cost: float) -> float:
 		nonlocal meta_obj, max_distance
 		if use_noise:
 			noise = meta_obj.parameters.eta * max_distance
-			return max(0.0, random.uniform(-noise, noise) + cost)
+			return float(max(0.0, random.uniform(-noise, noise) + cost))
 		return cost
 	return _objective_noise
 
 def _select_function_with_weight(funcs, weights):
-	assert len(funcs) == len(weights)
+	if len(funcs) != len(weights):
+		raise ValueError('weights must have same length as funcs!')
 	selected_index = random.choices(
 		range(len(funcs)),
 		weights=weights,
@@ -85,7 +86,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		insertion_func, insertion_func_idx = _select_function_with_weight(insertion_function_list, w_insertion)
 
 		# it uses a global variable thus tests should not be in parallel!!!
-		insertion.global_noise_func, noise_func_idx = _select_function_with_weight(noise_function_list, w_noise)
+		noise_func, noise_func_idx = _select_function_with_weight(noise_function_list, w_noise)
 		
 		removal_theta[remove_func_idx] += 1
 		insertion_theta[insertion_func_idx] += 1
@@ -93,7 +94,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		
 		s_p = s.copy()
 		remove_func(meta_obj, s_p, q)
-		insertion_func(meta_obj, s_p, q, insert_unlimited)
+		insertion_func(meta_obj, s_p, q, insert_unlimited, noise_func)
 		
 		if s_p.finger_print in accepted_solution_set:
 			continue
