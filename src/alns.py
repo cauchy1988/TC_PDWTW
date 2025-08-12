@@ -4,8 +4,6 @@
 # @Author: Tang Chao
 # @File: alns.py
 # @Software: PyCharm
-from meta import Meta
-from solution import PDWTWSolution
 from removal import *
 from insertion import *
 import random

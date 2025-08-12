@@ -33,19 +33,19 @@ class Path:
 			if latest_time > self.meta_obj.nodes[end_node_id].latest_service_time:
 				raise PathError(f"Time window violation: {latest_time} > {self.meta_obj.nodes[end_node_id].latest_service_time}")
 			
-			self.start_service_time_line: List[int] = [earliest_time, latest_time]
+			self.start_service_time_line: List[float] = [earliest_time, latest_time]
 			
 			# capacity load line
 			# load after each node in route
-			self.load_line = [self.meta_obj.nodes[start_node_id].load,
+			self.load_line: List[float] = [self.meta_obj.nodes[start_node_id].load,
 			                  self.meta_obj.nodes[start_node_id].load + self.meta_obj.nodes[end_node_id].load]
 			
 			# distance accumulated
 			end_distance = self.meta_obj.distances[start_node_id][end_node_id]
-			self.distances = [0, end_distance]
+			self.distances: List[float] = [0, end_distance]
 			
 			# time cost of the whole route
-			self.whole_time_cost = self.start_service_time_line[-1] - self.start_service_time_line[0]
+			self.whole_time_cost: float = self.start_service_time_line[-1] - self.start_service_time_line[0]
 
 	def copy(self):
 		new_path = Path(self.vehicle_id, self.meta_obj, False)
@@ -154,7 +154,7 @@ class Path:
 		current_distance = self.distances[-1] if self.distances else 0.0
 		distance_diff = current_distance - prev_distance
 		
-		return True, float(distance_diff), float(time_cost_diff)
+		return True, distance_diff, time_cost_diff
 		
 	def try_to_insert_request_optimal(self, request_id: int) -> Tuple[bool, float, float, Optional['Path']]:
 		"""Find optimal insertion position for a request"""
@@ -265,9 +265,9 @@ class Path:
 		current_distance = self.distances[-1] if self.distances else 0.0
 		distance_diff = prev_distance - current_distance
 
-		return float(distance_diff), float(time_cost_diff)
+		return distance_diff, time_cost_diff
 
-	def get_node_start_service_time(self, node_id: int) -> int:
+	def get_node_start_service_time(self, node_id: int) -> float:
 		"""Get the start service time for a specific node"""
 		if node_id not in self.route:
 			raise PathError(f"Node {node_id} not found in route")

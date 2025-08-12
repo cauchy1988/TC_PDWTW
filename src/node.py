@@ -17,7 +17,7 @@ class Node:
 	       service_time: The duration required to service the node.
 	       load: The load or demand associated with the node.
 	"""
-	def __init__(self, identity: int, x: float, y: float, earliest_service_time: int, latest_service_time: int, service_time: int, load: int) -> None:
+	def __init__(self, identity: int, x: float, y: float, earliest_service_time: float, latest_service_time: float, service_time: float, load: float) -> None:
 		self.identity = identity
 		self.x = x
 		self.y = y

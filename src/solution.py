@@ -16,6 +16,8 @@ from path import Path
 
 
 class InnerDictForNormalization:
+	"""Container for normalized difference values between requests"""
+	
 	def __init__(self) -> None:
 		# smaller request_id -> {bigger request_id -> normalized value}
 		self.distance_pick_dict: Dict[int, Dict[int, float]] = {}
@@ -38,11 +40,24 @@ class InnerDictForNormalization:
 		return new_obj
 
 
-def _normalize_dict(nested_dict, epsilon=1e-6):
+def _normalize_dict(nested_dict: Dict, epsilon: float = 1e-6) -> Dict:
+	"""
+	Normalize values in a nested dictionary to [0, 1] range
+	
+	Args:
+		nested_dict: Dictionary to normalize
+		epsilon: Threshold for considering values equal
+		
+	Returns:
+		Normalized dictionary with values in [0, 1] range
+	"""
 	all_values = []
 	for outer_key, inner_dict in nested_dict.items():
 		for inner_key, value in inner_dict.items():
 			all_values.append(value)
+	
+	if not all_values:
+		return nested_dict
 	
 	min_value = min(all_values)
 	max_value = max(all_values)
@@ -52,7 +67,7 @@ def _normalize_dict(nested_dict, epsilon=1e-6):
 		for outer_key, inner_dict in nested_dict.items():
 			normalized_inner_dict = {}
 			for inner_key, value in inner_dict.items():
-				normalized_inner_dict[inner_key] = 0.0  # 所有值归一化为 0.0
+				normalized_inner_dict[inner_key] = 0.0  # All values normalized to 0.0
 			normalized_dict[outer_key] = normalized_inner_dict
 	else:
 		normalized_dict = {}
@@ -67,6 +82,16 @@ def _normalize_dict(nested_dict, epsilon=1e-6):
 
 
 def generate_normalization_dict(meta_obj: Meta, one_solution: PDWTWSolution) -> InnerDictForNormalization:
+	"""
+	Generate normalized difference values between all requests in a solution
+	
+	Args:
+		meta_obj: Meta object containing problem data
+		one_solution: Solution to analyze
+		
+	Returns:
+		Normalized difference values container
+	"""
 	# init difference's dict
 	distance_pic_dict = {}
 	distance_delivery_dict = {}
@@ -132,12 +157,15 @@ def generate_normalization_dict(meta_obj: Meta, one_solution: PDWTWSolution) -> 
 
 
 def generate_solution_finger_print(paths: Dict[int, Path]) -> str:
-	assert paths is not None
+	"""Generate a fingerprint for the solution based on paths"""
+	if paths is None:
+		raise ValueError("paths cannot be None")
 	
 	gen_list = []
 	for key, value in sorted(paths.items(), key=lambda x: x[0]):
-		assert paths[key] is not None
-		gen_list.append((key, paths[key].route))
+		if value is None:
+			raise ValueError(f"Path for vehicle {key} is None")
+		gen_list.append((key, value.route))
 	
 	return hashlib.sha256(str(gen_list).encode()).hexdigest()
 
@@ -149,7 +177,15 @@ class Solution(ABC):
 
 
 class PDWTWSolution(Solution):
+	"""Solution class for Pickup and Delivery Problem with Time Windows (PDWTW)"""
+	
 	def __init__(self, meta_obj: Meta):
+		"""
+		Initialize a PDWTW solution
+		
+		Args:
+			meta_obj: Meta object containing problem data
+		"""
 		self.meta_obj = meta_obj
 		# vehicle_id -> Path
 		self.paths: Dict[int, Path] = {}
@@ -167,14 +203,19 @@ class PDWTWSolution(Solution):
 		self.finger_print = generate_solution_finger_print(self.paths)
 	
 	# this interface only use for problems with homogeneous fleet
-	def add_one_same_vehicle(self, one_vehicle_id: int = None):
+	def add_one_same_vehicle(self, one_vehicle_id: int = None) -> int:
+		"""Add one more vehicle of the same type to the solution"""
 		new_vehicle_id = self.meta_obj.add_one_same_vehicle(one_vehicle_id)
 		# update one_solution
 		self.vehicle_bank.add(new_vehicle_id)
+		return new_vehicle_id
 	
 	# this interface only use for problems with homogeneous fleet
 	def delete_vehicle_and_its_route(self, delete_vehicle_id: int):
-		assert delete_vehicle_id in self.paths or delete_vehicle_id in self.vehicle_bank
+		"""Delete a vehicle and its associated route"""
+		if delete_vehicle_id not in self.paths and delete_vehicle_id not in self.vehicle_bank:
+			raise ValueError(f"Vehicle {delete_vehicle_id} not found in solution")
+		
 		deleted_requests = set([request_id for request_id, vehicle_id in self.request_id_to_vehicle_id if delete_vehicle_id == vehicle_id])
 		self.remove_requests(deleted_requests)
 		self.vehicle_bank.remove(delete_vehicle_id)
@@ -182,10 +223,11 @@ class PDWTWSolution(Solution):
 		self.meta_obj.delete_vehicle(delete_vehicle_id)
 	
 	def copy(self):
+		"""Create a deep copy of the solution"""
 		new_obj = PDWTWSolution(self.meta_obj)
 		for vehicle_id, the_path in self.paths.items():
 			new_obj.paths[vehicle_id] = the_path.copy()
-		new_obj.request_back = self.request_bank.copy()
+		new_obj.request_bank = self.request_bank.copy()
 		new_obj.request_id_to_vehicle_id = self.request_id_to_vehicle_id.copy()
 		new_obj.node_id_to_vehicle_id = self.node_id_to_vehicle_id.copy()
 		new_obj.vehicle_bank = self.vehicle_bank.copy()
@@ -197,19 +239,31 @@ class PDWTWSolution(Solution):
 		
 		return new_obj
 	
-	def cost_if_remove_request(self, request_id: int):
-		assert request_id in self.request_id_to_vehicle_id
+	def cost_if_remove_request(self, request_id: int) -> float:
+		"""Calculate the cost if a request is removed from the solution"""
+		if request_id not in self.request_id_to_vehicle_id:
+			raise ValueError(f"Request {request_id} not found in solution")
 		
-		origin_path = self.paths[self.request_id_to_vehicle_id[request_id]].copy()
-		assert origin_path is not None
+		vehicle_id = self.request_id_to_vehicle_id[request_id]
+		if vehicle_id not in self.paths:
+			raise RuntimeError(f"Vehicle {vehicle_id} not found in paths")
+		
+		origin_path = self.paths[vehicle_id].copy()
+		if origin_path is None:
+			raise RuntimeError(f"Path for vehicle {vehicle_id} is None")
+		
 		copied_path = origin_path.copy()
-		
 		distance_diff, time_diff = copied_path.try_to_remove_request(request_id)
 		
 		return self.meta_obj.parameters.alpha * distance_diff + self.meta_obj.parameters.beta * time_diff
 	
-	def cost_if_insert_request_to_vehicle_path(self, request_id: int, vehicle_id: int) -> (bool, float):
-		assert request_id in self.request_bank and (vehicle_id in self.vehicle_bank or vehicle_id in self.paths)
+	def cost_if_insert_request_to_vehicle_path(self, request_id: int, vehicle_id: int) -> tuple[bool, float]:
+		"""Calculate the cost if a request is inserted into a specific vehicle path"""
+		if request_id not in self.request_bank:
+			raise ValueError(f"Request {request_id} not in request bank")
+		
+		if vehicle_id not in self.vehicle_bank and vehicle_id not in self.paths:
+			raise ValueError(f"Vehicle {vehicle_id} not found in solution")
 		
 		if vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
 			return False, 0.0
@@ -227,10 +281,15 @@ class PDWTWSolution(Solution):
 		return True, self.meta_obj.parameters.alpha * distance_diff + self.meta_obj.parameters.beta * time_diff
 	
 	def remove_requests(self, request_id_set):
+		"""Remove multiple requests from the solution"""
 		for request_id in request_id_set:
-			assert request_id in self.request_id_to_vehicle_id
+			if request_id not in self.request_id_to_vehicle_id:
+				raise ValueError(f"Request {request_id} not found in solution")
+			
 			vehicle_id = self.request_id_to_vehicle_id[request_id]
-			assert vehicle_id in self.paths
+			if vehicle_id not in self.paths:
+				raise RuntimeError(f"Vehicle {vehicle_id} not found in paths")
+			
 			path_obj = self.paths[vehicle_id]
 			_, __ = path_obj.try_to_remove_request(request_id)
 			
@@ -250,7 +309,9 @@ class PDWTWSolution(Solution):
 			self.finger_print = generate_solution_finger_print(self.paths)
 	
 	def insert_one_request_to_one_vehicle_route_optimal(self, request_id: int, vehicle_id: int) -> bool:
-		assert request_id in self.request_bank
+		"""Insert a request into a specific vehicle route optimally"""
+		if request_id not in self.request_bank:
+			raise ValueError(f"Request {request_id} not in request bank")
 		
 		if vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
 			return False
@@ -258,8 +319,10 @@ class PDWTWSolution(Solution):
 		if vehicle_id in self.vehicle_bank:
 			the_path = Path(vehicle_id, self.meta_obj)
 		else:
-			assert vehicle_id in self.paths
+			if vehicle_id not in self.paths:
+				raise ValueError(f"Vehicle {vehicle_id} not found in paths")
 			the_path = self.paths[vehicle_id]
+		
 		ok, _, __ = the_path.try_to_insert_request_optimal(request_id)
 		if ok:
 			self.request_bank.remove(request_id)
@@ -275,7 +338,9 @@ class PDWTWSolution(Solution):
 		return ok
 	
 	def insert_one_request_to_any_vehicle_route_optimal(self, request_id: int) -> bool:
-		assert request_id in self.request_bank
+		"""Insert a request into any available vehicle route optimally"""
+		if request_id not in self.request_bank:
+			raise ValueError(f"Request {request_id} not in request bank")
 		
 		vehicle_id_list = list(self.meta_obj.requests[request_id].vehicle_set & (self.vehicle_bank | list(self.paths.keys())))
 		
@@ -285,15 +350,20 @@ class PDWTWSolution(Solution):
 		
 		return False
 	
-	def get_node_start_service_time_in_path(self, node_id: int):
-		assert node_id in self.node_id_to_vehicle_id
-		vehicle_id = self.node_id_to_vehicle_id[node_id]
+	def get_node_start_service_time_in_path(self, node_id: int) -> float:
+		"""Get the start service time for a node in the solution"""
+		if node_id not in self.node_id_to_vehicle_id:
+			raise ValueError(f"Node {node_id} not found in solution")
 		
-		assert vehicle_id in self.paths
+		vehicle_id = self.node_id_to_vehicle_id[node_id]
+		if vehicle_id not in self.paths:
+			raise RuntimeError(f"Vehicle {vehicle_id} not found in paths")
+		
 		path_obj = self.paths[vehicle_id]
 		return path_obj.get_node_start_service_time(node_id)
 	
-	def _update_objective_cost_all(self):
+	def _update_objective_cost_all(self) -> None:
+		"""Update the total distance and time costs for all paths"""
 		self.distance_cost = 0.0
 		self.time_cost = 0.0
 		for vehicle_id in self.paths:
@@ -301,10 +371,18 @@ class PDWTWSolution(Solution):
 			self.time_cost += self.paths[vehicle_id].whole_time_cost
 			
 	def max_vehicle_id(self):
+		"""Get the maximum vehicle ID in the solution"""
 		if not self.paths and not self.vehicle_bank:
 			return None
-		max_vehicle_id =  max(max(self.paths.keys()), max(self.vehicle_bank))
-		assert max_vehicle_id == self.meta_obj.max_vehicle_id
+		
+		paths_max = max(self.paths.keys()) if self.paths else 0
+		bank_max = max(self.vehicle_bank) if self.vehicle_bank else 0
+		max_vehicle_id = max(paths_max, bank_max)
+		
+		if hasattr(self.meta_obj, 'max_vehicle_id'):
+			if max_vehicle_id != self.meta_obj.max_vehicle_id:
+				raise RuntimeError(f"Vehicle ID mismatch: {max_vehicle_id} != {self.meta_obj.max_vehicle_id}")
+		
 		return max_vehicle_id
 	
 	@property

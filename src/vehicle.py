@@ -8,12 +8,12 @@ from __future__ import annotations
 
 
 class Vehicle:
-	def __init__(self, identity, capacity, velocity, start_node_id, end_node_id):
-		self.identity = identity
-		self.capacity = capacity
-		self.velocity = velocity
-		self.start_node_id = start_node_id
-		self.end_node_id = end_node_id
+	def __init__(self, identity: int, capacity: float, velocity: float, start_node_id: int, end_node_id: int):
+		self.identity: int = identity
+		self.capacity: float = capacity
+		self.velocity: float = velocity
+		self.start_node_id: int = start_node_id
+		self.end_node_id: int = end_node_id
 	
 	def equals(self, other_vehicle: Vehicle) -> bool:
 		return  self.capacity == other_vehicle.capacity and \
