@@ -68,8 +68,8 @@ class Meta:
 			new_vehicle_id,
 			reference_vehicle.capacity,
 			reference_vehicle.velocity,
-			reference_vehicle.startNodeId,
-			reference_vehicle.endNodeId
+			reference_vehicle.start_node_id,
+			reference_vehicle.end_node_id,
 		)
 		
 		# Safely copy vehicle run time data
@@ -108,7 +108,7 @@ class Meta:
 		
 		return True  # Return True to indicate successful deletion
 	
-	def get_max_distance(self) -> float:
+	def get_max_distance(self) -> Optional[float]:
 		if not self.distances:
 			return None
 		return float(max((v for d in self.distances.values() for v in d.values()), default=None))
