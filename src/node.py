@@ -24,3 +24,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+
+class Node:
+	def __init__(self, node_id: int, x: float, y: float, 
+	             earliest_service_time: float, latest_service_time: float, 
+	             service_time: float, load: float):
+		self.node_id: int = node_id
+		self.x: float = x
+		self.y: float = y
+		self.earliest_service_time: float = earliest_service_time
+		self.latest_service_time: float = latest_service_time
+		self.service_time: float = service_time
+		self.load: float = load
+
