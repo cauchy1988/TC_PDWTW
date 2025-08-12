@@ -10,76 +10,48 @@ from meta import Meta
 
 class Path:
 	def __init__(self, vehicle_id: int, meta_obj: Meta, need_init=True):
-		self._metaObj = meta_obj
-		self._vehicleId = vehicle_id
+		self.meta_obj = meta_obj
+		self.vehicle_id = vehicle_id
 		
 		if need_init:
 			# node id route
-			start_node_id = self._metaObj.vehicles[self._vehicleId].start_node_id
-			end_node_id = self._metaObj.vehicles[self._vehicleId].end_node_id
-			self._route = [start_node_id, end_node_id]
+			start_node_id = self.meta_obj.vehicles[self.vehicle_id].start_node_id
+			end_node_id = self.meta_obj.vehicles[self.vehicle_id].end_node_id
+			self.route = [start_node_id, end_node_id]
 			
 			# start the service time alone the node route
-			earliest_time = self._metaObj.nodes[start_node_id].earliest_service_time
-			arrival_time = earliest_time + self._metaObj.nodes[start_node_id].service_time + self._metaObj.vehicle_run_between_nodes_time[self._vehicleId][start_node_id][end_node_id]
-			latest_time = max(arrival_time, self._metaObj.nodes[end_node_id].earliest_service_time)
-			assert(latest_time <= self._metaObj.nodes[end_node_id].latest_service_time)
-			self._startServiceTimeLine = [earliest_time, latest_time]
+			earliest_time = self.meta_obj.nodes[start_node_id].earliest_service_time
+			arrival_time = earliest_time + self.meta_obj.nodes[start_node_id].service_time + self.meta_obj.vehicle_run_between_nodes_time[self.vehicle_id][start_node_id][end_node_id]
+			latest_time = max(arrival_time, self.meta_obj.nodes[end_node_id].earliest_service_time)
+			assert(latest_time <= self.meta_obj.nodes[end_node_id].latest_service_time)
+			self.start_service_time_line = [earliest_time, latest_time]
 			
 			# capacity load line
 			# load after each node in _route
-			self._loadLine = [self._metaObj.nodes[start_node_id].load,
-							  self._metaObj.nodes[start_node_id].load + self._metaObj.nodes[end_node_id].load]
+			self.load_line = [self.meta_obj.nodes[start_node_id].load,
+			                  self.meta_obj.nodes[start_node_id].load + self.meta_obj.nodes[end_node_id].load]
 			
 			# distance accumulated
-			end_distance = self._metaObj.distances[start_node_id][end_node_id]
-			self._distances = [0, end_distance]
+			end_distance = self.meta_obj.distances[start_node_id][end_node_id]
+			self.distances = [0, end_distance]
 			
 			# time cost of the whole route
-			self._wholeTimeCost = self._startServiceTimeLine[len(self._startServiceTimeLine) - 1] - self._startServiceTimeLine[0]
+			self.whole_time_cost = self.start_service_time_line[len(self.start_service_time_line) - 1] - self.start_service_time_line[0]
 
 	def copy(self):
-		new_path = Path(self._vehicleId, self._metaObj, False)
-		new_path._metaObj = self._metaObj
-		new_path._vehicleId = self._vehicleId
-		new_path._route = self._route.copy()
-		new_path._startServiceTimeLine = self._startServiceTimeLine.copy()
-		new_path._loadLine = self._loadLine.copy()
-		new_path._distances = self._distances.copy()
-		new_path._wholeTimeCost = self._wholeTimeCost
+		new_path = Path(self.vehicle_id, self.meta_obj, False)
+		new_path.meta_obj = self.meta_obj
+		new_path.vehicle_id = self.vehicle_id
+		new_path.route = self.route.copy()
+		new_path.start_service_time_line = self.start_service_time_line.copy()
+		new_path.load_line = self.load_line.copy()
+		new_path.distances = self.distances.copy()
+		new_path.whole_time_cost = self.whole_time_cost
 		
 		return new_path
 	
 	def is_path_free(self):
 		return 2 >= len(self.route)
-	
-	@property
-	def meta_obj(self):
-		return self._metaObj
-	
-	@property
-	def vehicle_id(self):
-		return self._vehicleId
-	
-	@property
-	def route(self):
-		return self._route
-	
-	@property
-	def start_service_time_line(self):
-		return self._startServiceTimeLine
-	
-	@property
-	def load_line(self):
-		return self._loadLine
-	
-	@property
-	def distances(self):
-		return self._distances
-	
-	@property
-	def whole_time_cost(self):
-		return self._wholeTimeCost
 	
 	@property
 	def whole_distance_cost(self):
@@ -115,9 +87,9 @@ class Path:
 				return False, 0.0, 0.0
 			self.start_service_time_line[i] = new_start_time
 			
-		current_whole_time_cost = self._startServiceTimeLine[len(self._startServiceTimeLine) - 1] - self._startServiceTimeLine[0]
+		current_whole_time_cost = self.start_service_time_line[len(self.start_service_time_line) - 1] - self.start_service_time_line[0]
 		time_cost_diff = current_whole_time_cost - self.whole_time_cost
-		self._wholeTimeCost = current_whole_time_cost
+		self.whole_time_cost = current_whole_time_cost
 			
 		self.load_line.insert(pick_insert_idx, 0.0)
 		self.load_line.insert(delivery_insert_idx, 0.0)
@@ -147,7 +119,7 @@ class Path:
 		if self.vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
 			return False, 0, 0, None
 		
-		route_len = len(self._route)
+		route_len = len(self.route)
 		new_path_list = []
 		for i in range(1, route_len):
 			for j in range(i + 1, route_len + 1):
@@ -192,8 +164,8 @@ class Path:
 				new_start_time > self.meta_obj.nodes[current_node_id].latest_service_time:
 				assert False
 		
-		self._wholeTimeCost = self._startServiceTimeLine[len(self._startServiceTimeLine) - 1] - self._startServiceTimeLine[0]
-		time_cost_diff = prev_whole_time_cost - self._wholeTimeCost
+		self.whole_time_cost = self.start_service_time_line[len(self.start_service_time_line) - 1] - self.start_service_time_line[0]
+		time_cost_diff = prev_whole_time_cost - self.whole_time_cost
 
 		self.load_line.pop(pick_node_idx)
 		self.load_line.pop(delivery_node_idx)

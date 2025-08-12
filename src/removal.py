@@ -8,41 +8,6 @@ from meta import Meta
 from solution import PDWTWSolution, InnerDictForNormalization, generate_normalization_dict
 import random
 
-'''
-def big_r_function(meta_obj: Meta, one_solution: PDWTWSolution, request_id: int):
-	request_id_obj = meta_obj.requests[request_id]
-	request_id_pick_up_node_id = request_id_obj.pick_node_id
-	request_id_delivery_node_id = request_id_obj.delivery_node_id
-	l_first = meta_obj.requests[request_id].require_capacity
-
-	def _nest_big_r_function(another_request_id: int):
-		another_request_id_obj = meta_obj.requests[another_request_id]
-		pick_node_id = another_request_id_obj.pick_node_id
-		delivery_node_id = another_request_id_obj.delivery_node_id
-
-		d_pick_up = meta_obj.distances[request_id_pick_up_node_id][pick_node_id]
-		d_delivery = meta_obj.distances[request_id_delivery_node_id][delivery_node_id]
-
-		t_pick_up_one = one_solution.get_node_start_service_time_in_path(request_id_pick_up_node_id)
-		t_delivery_one = one_solution.get_node_start_service_time_in_path(request_id_delivery_node_id)
-		t_pick_up_two = one_solution.get_node_start_service_time_in_path(pick_node_id)
-		t_delivery_two = one_solution.get_node_start_service_time_in_path(delivery_node_id)
-		t_pick_diff = abs(t_pick_up_two - t_pick_up_one)
-		t_delivery_diff = abs(t_delivery_two - t_delivery_one)
-
-		l_second = meta_obj.requests[another_request_id].require_capacity
-
-		big_r_value = _shaw_param_1 * (d_pick_up + d_delivery) + \
-		              _shaw_param_2 * (t_pick_diff + t_delivery_diff) + \
-		              _shaw_param_3 * abs(l_second - l_first) + \
-					  _shaw_param_4 * (1 - len(request_id_obj.vehicle_set & another_request_id_obj.vehicle_set) / min(len(request_id_obj.vehicle_set), len(another_request_id_obj.vehicle_set)))
-
-		return big_r_value
-
-	return _nest_big_r_function
-'''
-
-
 def big_r_function(meta_obj, request_id: int, norm_obj: InnerDictForNormalization):
 	
 	def _nest_big_r_function(another_request_id: int):

@@ -8,7 +8,6 @@ from meta import Meta
 from solution import PDWTWSolution
 from removal import *
 from insertion import *
-import insertion
 import random
 import math
 

@@ -150,21 +150,21 @@ class Solution(ABC):
 
 class PDWTWSolution(Solution):
 	def __init__(self, meta_obj: Meta):
-		self._metaObj = meta_obj
+		self.meta_obj = meta_obj
 		# vehicle_id -> Path
-		self._paths: Dict[int, Path] = {}
-		self._requestBank = set([request_id for request_id in meta_obj.requests])
-		self._requestIdToVehicleId: Dict[int, int] = {}
+		self.paths: Dict[int, Path] = {}
+		self.request_bank = set([request_id for request_id in meta_obj.requests])
+		self.request_id_to_vehicle_id: Dict[int, int] = {}
 		
 		# only preserve pickup and delivery node id map
-		self._nodeIdToVehicleId: Dict[int, int] = {}
+		self.node_id_to_vehicle_id: Dict[int, int] = {}
 		
-		self._vehicleBank = set([vehicle_id for vehicle_id in meta_obj.vehicles])
+		self.vehicle_bank = set([vehicle_id for vehicle_id in meta_obj.vehicles])
 		
-		self._distanceCost = 0.0
-		self._timeCost = 0.0
+		self.distance_cost = 0.0
+		self.time_cost = 0.0
 		
-		self._fingerPrint = generate_solution_finger_print(self._paths)
+		self.finger_print = generate_solution_finger_print(self.paths)
 	
 	# this interface only use for problems with homogeneous fleet
 	def add_one_same_vehicle(self, one_vehicle_id: int = None):
@@ -185,15 +185,15 @@ class PDWTWSolution(Solution):
 		new_obj = PDWTWSolution(self.meta_obj)
 		for vehicle_id, the_path in self.paths.items():
 			new_obj.paths[vehicle_id] = the_path.copy()
-		new_obj._requestBank = self.request_bank.copy()
-		new_obj._requestIdToVehicleId = self.request_id_to_vehicle_id.copy()
-		new_obj._nodeIdToVehicleId = self.node_id_to_vehicle_id.copy()
-		new_obj._vehicleBank = self.vehicle_bank.copy()
+		new_obj.request_back = self.request_bank.copy()
+		new_obj.request_id_to_vehicle_id = self.request_id_to_vehicle_id.copy()
+		new_obj.node_id_to_vehicle_id = self.node_id_to_vehicle_id.copy()
+		new_obj.vehicle_bank = self.vehicle_bank.copy()
 		
-		new_obj._distanceCost = self._distanceCost
-		new_obj._timeCost = self._timeCost
+		new_obj.distance_cost = self.distance_cost
+		new_obj.time_cost = self.time_cost
 		
-		new_obj._fingerPrint = self._fingerPrint
+		new_obj.finger_print = self.finger_print
 		
 		return new_obj
 	
@@ -247,7 +247,7 @@ class PDWTWSolution(Solution):
 				self.vehicle_bank.add(vehicle_id)
 			
 			self._update_objective_cost_all()
-			self._fingerPrint = generate_solution_finger_print(self._paths)
+			self.finger_print = generate_solution_finger_print(self.paths)
 	
 	def insert_one_request_to_one_vehicle_route_optimal(self, request_id: int, vehicle_id: int) -> bool:
 		assert request_id in self.request_bank
@@ -271,7 +271,7 @@ class PDWTWSolution(Solution):
 				self.vehicle_bank.remove(vehicle_id)
 				self.paths[vehicle_id] = the_path
 			self._update_objective_cost_all()
-			self._fingerPrint = generate_solution_finger_print(self._paths)
+			self.finger_print = generate_solution_finger_print(self.paths)
 		return ok
 	
 	def insert_one_request_to_any_vehicle_route_optimal(self, request_id: int) -> bool:
@@ -294,11 +294,11 @@ class PDWTWSolution(Solution):
 		return path_obj.get_node_start_service_time(node_id)
 	
 	def _update_objective_cost_all(self):
-		self._distanceCost = 0.0
-		self._timeCost = 0.0
+		self.distance_cost = 0.0
+		self.time_cost = 0.0
 		for vehicle_id in self.paths:
-			self._distanceCost += self.paths[vehicle_id].whole_distance_cost
-			self._timeCost += self.paths[vehicle_id].whole_time_cost
+			self.distance_cost += self.paths[vehicle_id].whole_distance_cost
+			self.time_cost += self.paths[vehicle_id].whole_time_cost
 			
 	def max_vehicle_id(self):
 		if not self.paths and not self.vehicle_bank:
@@ -308,44 +308,8 @@ class PDWTWSolution(Solution):
 		return max_vehicle_id
 	
 	@property
-	def meta_obj(self):
-		return self._metaObj
-	
-	@property
-	def paths(self):
-		return self._paths
-	
-	@property
-	def request_bank(self):
-		return self._requestBank
-	
-	@property
-	def request_id_to_vehicle_id(self):
-		return self._requestIdToVehicleId
-	
-	@property
-	def node_id_to_vehicle_id(self):
-		return self._nodeIdToVehicleId
-	
-	@property
-	def vehicle_bank(self):
-		return self._vehicleBank
-	
-	@property
-	def distance_cost(self):
-		return self._distanceCost
-	
-	@property
-	def time_cost(self):
-		return self._timeCost
-	
-	@property
-	def finger_print(self):
-		return self._fingerPrint
-	
-	@property
 	def objective_cost(self):
-		return self.meta_obj.parameters.alpha * self._distanceCost + self.meta_obj.parameters.beta * self._timeCost + self.meta_obj.parameters.gama * len(
+		return self.meta_obj.parameters.alpha * self.distance_cost + self.meta_obj.parameters.beta * self.time_cost + self.meta_obj.parameters.gama * len(
 			self.request_bank)
 	
 	@property
