@@ -283,7 +283,7 @@ class Parameters:
         
         self._performance_history.append(record)
         
-        # Update best performance if better
+        # Update the best performance if better
         if self._best_performance is None:
             self._best_performance = record
         else:
