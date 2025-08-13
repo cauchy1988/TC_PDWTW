@@ -1,0 +1,47 @@
+## Li & Lim PDPTW Data Format
+
+### File Header (First Line)
+```
+<number_of_vehicles> <vehicle_capacity> <speed(unused)>
+```
+
+### Depot Information (Second Line)
+```
+<node_id> <X_coordinate> <Y_coordinate> <demand> <earliest_start_time> <latest_end_time> <service_time> <pickup_index> <delivery_index>
+```
+
+### Customer Node Information (Subsequent Lines)
+Each node contains the following fields, separated by tabs:
+
+```
+<node_id> <X_coordinate> <Y_coordinate> <demand> <earliest_start_time> <latest_end_time> <service_time> <pickup_index> <delivery_index>
+```
+
+### Field Descriptions:
+
+1. **Node ID**: Sequential number starting from 0 (0 is depot)
+2. **X coordinate, Y coordinate**: Coordinates of the node location
+3. **Demand**:
+   - Pickup nodes: Positive numbers (load cargo)
+   - Delivery nodes: Negative numbers (unload cargo)
+   - Depot: 0
+4. **Earliest start time**: Earliest time service can begin
+5. **Latest end time**: Latest time service must be completed
+6. **Service time**: Duration of service at this point
+7. **Pickup index**:
+   - For pickup nodes: 0
+   - For delivery nodes: corresponding pickup node ID
+8. **Delivery index**:
+   - For pickup nodes: corresponding delivery node ID
+   - For delivery nodes: 0
+
+### Important Characteristics:
+
+- Each node is either pickup or delivery, and has a corresponding paired node
+- **Distances use Euclidean distance calculation**
+- **Travel time equals distance value**
+- **Calculations should use double precision**
+- **Total distance results should retain 2 decimal places**
+- **Field separator uses tabs, not spaces**
+
+This format clearly defines pickup-delivery pairing relationships, time window constraints, and location information for each node, making it suitable for solving the classical Pickup and Delivery Problem with Time Windows (PDPTW).
