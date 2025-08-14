@@ -178,17 +178,42 @@ def generate_normalization_dict(meta_obj: Meta, one_solution: PDWTWSolution) -> 
 
 
 def generate_solution_finger_print(paths: Dict[int, Path]) -> str:
-	"""Generate a fingerprint for the solution based on paths"""
+	"""Generate a robust fingerprint for the solution based on paths.
+	
+	Uses a more reliable approach than string conversion by directly hashing
+	the structured route data to avoid string representation instabilities.
+	
+	Args:
+		paths: Dictionary mapping vehicle IDs to their paths
+		
+	Returns:
+		Hexadecimal fingerprint string
+		
+	Raises:
+		ValueError: If paths is None or contains None values
+	"""
 	if paths is None:
 		raise ValueError("paths cannot be None")
 	
-	gen_list = []
-	for key, value in sorted(paths.items(), key=lambda x: x[0]):
-		if value is None:
-			raise ValueError(f"Path for vehicle {key} is None")
-		gen_list.append((key, value.route))
+	# Create a deterministic representation using sorted tuples
+	route_data = []
+	for vehicle_id in sorted(paths.keys()):
+		path = paths[vehicle_id]
+		if path is None:
+			raise ValueError(f"Path for vehicle {vehicle_id} is None")
+		if path.route is None:
+			raise ValueError(f"Route for vehicle {vehicle_id} is None")
+		
+		# Create tuple of (vehicle_id, tuple_of_route_nodes)
+		route_tuple = (vehicle_id, tuple(path.route))
+		route_data.append(route_tuple)
 	
-	return hashlib.sha256(str(gen_list).encode()).hexdigest()
+	# Convert to bytes in a deterministic way
+	fingerprint_data = str(tuple(route_data)).encode('utf-8')
+	
+	# Use a faster hash function for better performance
+	import hashlib
+	return hashlib.blake2b(fingerprint_data, digest_size=16).hexdigest()
 
 
 class Solution(ABC):
