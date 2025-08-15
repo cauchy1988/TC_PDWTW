@@ -63,15 +63,23 @@ def _select_function_with_weight(funcs: List[Callable], weights: List[float]) ->
 		Tuple of (selected_function, index_of_selected_function)
 		
 	Raises:
-		ValueError: If lengths of funcs and weights don't match
+		ValueError: If lengths of funcs and weights don't match or weights are invalid
 	"""
 	if len(funcs) != len(weights):
 		raise ValueError('weights must have same length as funcs!')
-	selected_index = random.choices(
-		range(len(funcs)),
-		weights=weights,
-		k=1
-	)[0]
+	
+	# Handle case where all weights are zero or negative
+	if all(w <= 0 for w in weights):
+		# Fallback to uniform selection if all weights are zero/negative
+		selected_index = random.randint(0, len(funcs) - 1)
+	else:
+		# Ensure all weights are non-negative for random.choices
+		positive_weights = [max(0.0, w) for w in weights]
+		selected_index = random.choices(
+			range(len(funcs)),
+			weights=positive_weights,
+			k=1
+		)[0]
 
 	return funcs[selected_index], selected_index
 
@@ -165,6 +173,12 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	q_upper_bound = min(meta_obj.parameters.remove_upper_bound, int(meta_obj.parameters.epsilon * requests_num))
 	q_lower_bound = meta_obj.parameters.remove_lower_bound
 	
+	# Validate removal bounds
+	if q_upper_bound < q_lower_bound:
+		raise ValueError(f"q_upper_bound ({q_upper_bound}) must be >= q_lower_bound ({q_lower_bound})")
+	if q_lower_bound < 1:
+		raise ValueError("q_lower_bound must be at least 1")
+	
 	# Initialize removal operators with equal weights
 	w_removal = [meta_obj.parameters.initial_weight, meta_obj.parameters.initial_weight, meta_obj.parameters.initial_weight]
 	removal_function_list = [shaw_removal, random_removal, worst_removal]
@@ -214,12 +228,13 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		insertion_theta[insertion_func_idx] += 1
 		noise_theta[noise_func_idx] += 1
 		
-		# Apply destroy and repair operations
+		# Apply to destroy and repair operations
 		s_p = s.copy()  # Create candidate solution
 		remove_func(meta_obj, s_p, q)  # Destroy: remove q requests
 		insertion_func(meta_obj, s_p, q, insert_unlimited, noise_func)  # Repair: reinsert requests
 		
 		# Skip if this solution configuration was already explored
+		# finger_print唯一性依赖，需保证finger_print实现唯一且不可变
 		if s_p.finger_print in accepted_solution_set:
 			continue
 
@@ -261,20 +276,23 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		# Track accepted solutions to avoid revisiting
 		if is_accepted:
 			accepted_solution_set.add(s_p.finger_print)
-		
+			# 控制accepted_solution_set最大容量，避免内存溢出
+			if len(accepted_solution_set) > ACCEPTED_SET_MAXLEN:
+				accepted_solution_set.pop()
+
 		# Adaptive weight update at segment boundaries
 		if ((i + 1) % meta_obj.parameters.segment_num) == 0:
 			# Update removal operator weights based on performance
 			_assert_len_equal(w_removal, removal_theta, removal_rewards)
-			w_removal = [0 if new_theta <= 1e-6 else (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
+			w_removal = [max(1e-8, (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) if new_theta > 0 else origin_w) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
 			
 			# Update insertion operator weights based on performance
 			_assert_len_equal(w_insertion, insertion_rewards, insertion_theta)
-			w_insertion = [0 if new_theta <= 1e-6 else (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
+			w_insertion = [max(1e-8, (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) if new_theta > 0 else origin_w) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
 			
 			# Update noise operator weights based on performance
 			_assert_len_equal(w_noise, noise_rewards, noise_theta)
-			w_noise = [0 if new_theta <= 1e-6 else (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_noise / new_theta) for origin_w, new_noise, new_theta in zip(w_noise, noise_rewards, noise_theta)]
+			w_noise = [max(1e-8, (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_noise / new_theta) if new_theta > 0 else origin_w) for origin_w, new_noise, new_theta in zip(w_noise, noise_rewards, noise_theta)]
 
 			# Reset statistics for next segment
 			removal_rewards = [0, 0, 0]
@@ -284,8 +302,8 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			noise_rewards = [0, 0]
 			noise_theta = [0, 0]
 
-		# Cool down temperature for simulated annealing
-		t_current *= meta_obj.parameters.c
+		# Cool down temperature for simulated annealing (prevent underflow)
+		t_current = max(1e-10, t_current * meta_obj.parameters.c)
 		
 	# Return the best solution found
 	return s_best
