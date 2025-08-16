@@ -33,6 +33,9 @@ from typing import Callable, List, Tuple
 from meta import Meta
 from solution import PDWTWSolution
 
+# Constants
+ACCEPTED_SET_MAXLEN = 25000  # Maximum size of accepted solution set to prevent memory overflow
+
 def _objective_noise_wrapper(meta_obj: Meta, use_noise: bool, max_distance: float) -> Callable[[float], float]:
 	"""Create an objective function wrapper that optionally adds noise.
 	
@@ -98,7 +101,7 @@ def _compute_initial_temperature(z0: float, w: float, p: float) -> float:
 		ValueError: If z0 <= 0 or p not in (0,1)
 	"""
 	if z0 <= 0.0:
-		raise ValueError("initial cost z0 should be positive")
+		raise ValueError(f"initial cost z0 should be positive z0={z0}")
 	if p <= 0 or p >= 1:
 		raise ValueError("receptive ratio p should be in the range (0,1)")
 	delta = w * z0

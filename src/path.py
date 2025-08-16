@@ -41,9 +41,17 @@ class Path:
 		self.vehicle_id = vehicle_id
 		
 		if need_init:
+			# Check if vehicle and its nodes still exist
+			if vehicle_id not in self.meta_obj.vehicles:
+				raise PathError(f"Vehicle {vehicle_id} not found in meta_obj")
+			
 			# node id route
 			start_node_id = self.meta_obj.vehicles[self.vehicle_id].start_node_id
 			end_node_id = self.meta_obj.vehicles[self.vehicle_id].end_node_id
+			
+			if start_node_id not in self.meta_obj.nodes or end_node_id not in self.meta_obj.nodes:
+				raise PathError(f"Vehicle {vehicle_id} nodes not found: start={start_node_id}, end={end_node_id}")
+			
 			self.route: List[int] = [start_node_id, end_node_id]
 			
 			# start the service time along the node route
@@ -209,6 +217,9 @@ class Path:
 		for i in range(start_idx, len(self.start_service_time_line)):
 			prev_node_id = self.route[i - 1]
 			current_node_id = self.route[i]
+			
+			
+			
 			new_start_time = max(self.start_service_time_line[i - 1] +
 			                     self.meta_obj.nodes[prev_node_id].service_time +
 			                     self.meta_obj.vehicle_run_between_nodes_time[self.vehicle_id][prev_node_id][current_node_id],

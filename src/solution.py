@@ -262,8 +262,13 @@ class PDWTWSolution(Solution):
 		if delete_vehicle_id not in self.paths and delete_vehicle_id not in self.vehicle_bank:
 			raise ValueError(f"Vehicle {delete_vehicle_id} not found in solution")
 		
-		deleted_requests = set([request_id for request_id, vehicle_id in self.request_id_to_vehicle_id if delete_vehicle_id == vehicle_id])
+		deleted_requests = set([request_id for request_id, vehicle_id in self.request_id_to_vehicle_id.items() if delete_vehicle_id == vehicle_id])
 		self.remove_requests(deleted_requests)
+		
+		# Assert that delete_vehicle_id is definitely deleted from self.paths after remove_requests
+		assert delete_vehicle_id not in self.paths, f"Vehicle {delete_vehicle_id} should have been removed from paths"
+		
+		assert delete_vehicle_id in self.vehicle_bank
 		self.vehicle_bank.remove(delete_vehicle_id)
 		
 		self.meta_obj.delete_vehicle(delete_vehicle_id)
@@ -294,7 +299,7 @@ class PDWTWSolution(Solution):
 		if vehicle_id not in self.paths:
 			raise RuntimeError(f"Vehicle {vehicle_id} not found in paths")
 		
-		origin_path = self.paths[vehicle_id].copy()
+		origin_path = self.paths[vehicle_id]
 		if origin_path is None:
 			raise RuntimeError(f"Path for vehicle {vehicle_id} is None")
 		
@@ -314,12 +319,14 @@ class PDWTWSolution(Solution):
 		if vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
 			return False, 0.0
 		
+
+		
 		if vehicle_id in self.paths:
 			the_path = self.paths[vehicle_id].copy()
 		else:
 			the_path = Path(vehicle_id, self.meta_obj)
 		
-		ok, distance_diff, time_diff = the_path.try_to_insert_request_optimal(request_id)
+		ok, distance_diff, time_diff, _ = the_path.try_to_insert_request_optimal(request_id)
 		
 		if not ok:
 			return False, 0.0
@@ -369,16 +376,16 @@ class PDWTWSolution(Solution):
 				raise ValueError(f"Vehicle {vehicle_id} not found in paths")
 			the_path = self.paths[vehicle_id]
 		
-		ok, _, __ = the_path.try_to_insert_request_optimal(request_id)
+		ok, _, __, optimal_path = the_path.try_to_insert_request_optimal(request_id)
 		if ok:
 			self.request_bank.remove(request_id)
 			self.request_id_to_vehicle_id[request_id] = vehicle_id
+			self.paths[vehicle_id] = optimal_path
 			request_obj = self.meta_obj.requests[request_id]
 			self.node_id_to_vehicle_id[request_obj.pick_node_id] = vehicle_id
 			self.node_id_to_vehicle_id[request_obj.delivery_node_id] = vehicle_id
 			if vehicle_id in self.vehicle_bank:
 				self.vehicle_bank.remove(vehicle_id)
-				self.paths[vehicle_id] = the_path
 			self._update_objective_cost_all()
 			self.finger_print = generate_solution_finger_print(self.paths)
 		return ok
@@ -388,7 +395,7 @@ class PDWTWSolution(Solution):
 		if request_id not in self.request_bank:
 			raise ValueError(f"Request {request_id} not in request bank")
 		
-		vehicle_id_list = list(self.meta_obj.requests[request_id].vehicle_set & (self.vehicle_bank | list(self.paths.keys())))
+		vehicle_id_list = list(self.meta_obj.requests[request_id].vehicle_set & (self.vehicle_bank | self.paths.keys()))
 		
 		for vehicle_id in vehicle_id_list:
 			if self.insert_one_request_to_one_vehicle_route_optimal(request_id, vehicle_id):
@@ -426,8 +433,8 @@ class PDWTWSolution(Solution):
 		max_vehicle_id = max(paths_max, bank_max)
 		
 		if hasattr(self.meta_obj, 'max_vehicle_id'):
-			if max_vehicle_id != self.meta_obj.max_vehicle_id:
-				raise RuntimeError(f"Vehicle ID mismatch: {max_vehicle_id} != {self.meta_obj.max_vehicle_id}")
+			if max_vehicle_id != self.meta_obj.max_vehicle_id():
+				raise RuntimeError(f"Vehicle ID mismatch: {max_vehicle_id} != {self.meta_obj.max_vehicle_id()}")
 		
 		return max_vehicle_id
 	

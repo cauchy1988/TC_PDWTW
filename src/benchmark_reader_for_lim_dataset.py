@@ -129,21 +129,31 @@ class LiLimBenchmarkReader(BenchmarkReader):
 	def get_meta_obj(self) -> Optional[Meta]:
 		new_meta_obj = Meta(Parameters())
 		
-		# Initialize vehicles of Meta
-		for vehicle_id in range(1, self.problem_params.vehicle_count + 1):
-			new_meta_obj.vehicles[vehicle_id] = Vehicle(vehicle_id, self.problem_params.vehicle_capacity,
-			                                            self.problem_params.vehicle_speed, self.depot.node_id,
-			                                            self.depot.node_id)
-		
-		# Initialize nodes of Meta
-		new_meta_obj.nodes[self.depot.node_id] = Node(self.depot.node_id, self.depot.x_coord, self.depot.y_coord,
-		                                              self.depot.earliest_time, self.depot.latest_time,
-		                                              self.depot.service_time, self.depot.demand)
 		for node_id, custom_node in self.nodes.items():
 			new_meta_obj.nodes[node_id] = Node(custom_node.node_id, custom_node.x_coord, custom_node.y_coord,
 			                                   custom_node.earliest_time, custom_node.latest_time,
 			                                   custom_node.service_time, custom_node.demand)
+			
+		current_max_node_id = max(new_meta_obj.nodes.keys())
 		
+		# although the vehicles have the same (start and end)depots location, we should create depot nodes of 2 * vehicle_num of the same (x,y) location with the same time window
+		current_node_id = current_max_node_id + 1
+		for vehicle_id in range(1, self.problem_params.vehicle_count + 1):
+			new_meta_obj.vehicles[vehicle_id] = Vehicle(vehicle_id, self.problem_params.vehicle_capacity,
+			                                            self.problem_params.vehicle_speed, current_node_id,
+			                                            current_node_id + self.problem_params.vehicle_count)
+			
+			# start depot of the vehicle
+			new_meta_obj.nodes[current_node_id] = Node(current_node_id, self.depot.x_coord, self.depot.y_coord,
+														  self.depot.earliest_time, self.depot.latest_time,
+														  self.depot.service_time, self.depot.demand)
+			# end depot of the vehicle
+			new_meta_obj.nodes[current_node_id + self.problem_params.vehicle_count] = Node(current_node_id + self.problem_params.vehicle_count,
+			                                                                               self.depot.x_coord, self.depot.y_coord,
+																						   self.depot.earliest_time, self.depot.latest_time,
+																						   self.depot.service_time, self.depot.demand)
+			current_node_id += 1
+
 		# Initialize 'distances' of Meta
 		new_meta_obj.distances = {}
 		for key in new_meta_obj.nodes.keys():
@@ -186,6 +196,7 @@ class LiLimBenchmarkReader(BenchmarkReader):
 		# Get pickup-delivery pairs using the existing method
 		pickup_delivery_pairs = self.get_pickup_delivery_pairs()
 		
+		# The request ids are not given by the original li & lim dataset files, so we should generate them all by ourselves
 		request_id = 1
 		for pickup_node_id, delivery_node_id in pickup_delivery_pairs:
 			# Get the pickup node to determine required capacity
@@ -390,3 +401,4 @@ if __name__ == "__main__":
 	
 	except Exception as e:
 		print(f"Error reading Li & Lim benchmark file: {e}")
+

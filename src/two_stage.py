@@ -59,7 +59,7 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
         raise ValueError("one_solution cannot be None")
     
     # Phase 1: Insert all requests by adding vehicles as needed
-    requests_in_bank = one_solution.request_bank.copy()
+    requests_in_bank = list(one_solution.request_bank)
     
     a_iteration_num = 0
     max_iterations = 1000  # Prevent infinite loops
@@ -87,6 +87,13 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
     
     result_solution = one_solution.copy()
     
+    print("vehicle num:", len(one_solution.paths))
+
+    # Create a copy of vehicle_bank to avoid modification during iteration
+    vehicle_bank_copy = list(one_solution.vehicle_bank)
+    for vehicle_id in vehicle_bank_copy:
+        one_solution.delete_vehicle_and_its_route(vehicle_id)
+    
     # Phase 2: Iteratively remove vehicles and try to reassign requests
     total_iteration_num = a_iteration_num
     max_total_iterations = one_solution.meta_obj.parameters.theta
@@ -96,6 +103,8 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
         max_vehicle_id = one_solution.max_vehicle_id()
         if max_vehicle_id is None:
             break
+        
+        print("loop num :", total_iteration_num)
         
         # Remove the vehicle and its route
         one_solution.delete_vehicle_and_its_route(max_vehicle_id)
@@ -115,6 +124,10 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
             else:
                 # Failed to reassign all requests, stop here
                 break
+        except Exception as e:
+            # Handle any errors during ALNS, including vehicle deletion errors
+            print(f"Warning: ALNS failed during vehicle removal: {e}")
+            break
         finally:
             # Restore original parameters
             one_solution.meta_obj.parameters.iteration_num = original_iteration_num

@@ -36,9 +36,3 @@ class Vehicle:
 		self.start_node_id: int = start_node_id
 		self.end_node_id: int = end_node_id
 	
-	def equals(self, other_vehicle: Vehicle) -> bool:
-		return  self.capacity == other_vehicle.capacity and \
-				self.velocity == other_vehicle.velocity and \
-				self.start_node_id == other_vehicle.start_node_id and \
-				self.end_node_id == other_vehicle.end_node_id
-	
