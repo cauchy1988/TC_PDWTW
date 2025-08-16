@@ -134,7 +134,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		meta_obj: Meta object containing problem instance and parameters
 		initial_solution: Starting solution to improve
 		insert_unlimited: Whether to allow unlimited insertions
-		
+	    stop_if_all_request_coped: Stop the iteration and return the 'feasible' solution immediately if it is set True
 	Returns:
 		Best solution found during the search
 		
@@ -294,17 +294,33 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 
 		# Adaptive weight update at segment boundaries
 		if ((total_iteration_num + 1) % meta_obj.parameters.segment_num) == 0:
+			# Precompute common values for efficiency
+			r = meta_obj.parameters.r
+			one_minus_r = 1 - r
+			
 			# Update removal operator weights based on performance
 			_assert_len_equal(w_removal, removal_theta, removal_rewards)
-			w_removal = [max(1e-8, (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) if new_theta > 0 else origin_w) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
+			for i in range(len(w_removal)):
+				if removal_theta[i] > 0:
+					w_removal[i] = max(1e-8, one_minus_r * w_removal[i] + r * (removal_rewards[i] / removal_theta[i]))
+				else:
+					w_removal[i] = max(1e-8, w_removal[i])
 			
 			# Update insertion operator weights based on performance
 			_assert_len_equal(w_insertion, insertion_rewards, insertion_theta)
-			w_insertion = [max(1e-8, (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) if new_theta > 0 else origin_w) for origin_w, new_reward, new_theta in zip(w_insertion, insertion_rewards, insertion_theta)]
+			for i in range(len(w_insertion)):
+				if insertion_theta[i] > 0:
+					w_insertion[i] = max(1e-8, one_minus_r * w_insertion[i] + r * (insertion_rewards[i] / insertion_theta[i]))
+				else:
+					w_insertion[i] = max(1e-8, w_insertion[i])
 			
 			# Update noise operator weights based on performance
 			_assert_len_equal(w_noise, noise_rewards, noise_theta)
-			w_noise = [max(1e-8, (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_noise / new_theta) if new_theta > 0 else origin_w) for origin_w, new_noise, new_theta in zip(w_noise, noise_rewards, noise_theta)]
+			for i in range(len(w_noise)):
+				if noise_theta[i] > 0:
+					w_noise[i] = max(1e-8, one_minus_r * w_noise[i] + r * (noise_rewards[i] / noise_theta[i]))
+				else:
+					w_noise[i] = max(1e-8, w_noise[i])
 
 			# Reset statistics for next segment
 			removal_rewards = [0, 0, 0]

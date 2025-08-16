@@ -60,8 +60,9 @@ def _get_request_vehicle_cost(meta_obj: Meta, one_solution: PDWTWSolution,
     
     request_vehicle_cost: Dict[int, Dict[int, float]] = {}
     
-    # Get all available vehicles
-    vehicles = list(set(one_solution.vehicle_bank) | set(one_solution.paths.keys()))
+    # Get all available vehicles - avoid expensive set operations
+    vehicles = set(one_solution.vehicle_bank)
+    vehicles.update(one_solution.paths.keys())
     
     # Validate vehicle uniqueness
     if len(vehicles) < len(one_solution.vehicle_bank) + len(one_solution.paths):

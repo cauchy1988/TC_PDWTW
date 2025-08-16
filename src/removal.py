@@ -85,15 +85,15 @@ def shaw_removal(meta_obj: Meta, one_solution: PDWTWSolution, q: int) -> None:
     if q <= 0:
         raise ValueError(f"q must be positive, got {q}")
     
-    solution_request_list = list(one_solution.request_id_to_vehicle_id.keys())
-    if q > len(solution_request_list):
-        raise RuntimeError(f"Cannot remove {q} requests from solution with only {len(solution_request_list)} requests")
+    solution_request_set = set(one_solution.request_id_to_vehicle_id.keys())
+    if q > len(solution_request_set):
+        raise RuntimeError(f"Cannot remove {q} requests from solution with only {len(solution_request_set)} requests")
     
     if q == 0:
         return
     
     # Start with a random request
-    r = random.choice(solution_request_list)
+    r = random.choice(list(solution_request_set))
     big_d: Set[int] = {r}
     
     # Generate normalization dictionary once
@@ -106,21 +106,24 @@ def shaw_removal(meta_obj: Meta, one_solution: PDWTWSolution, q: int) -> None:
         
         r = random.choice(list(big_d))
         
-        # Get remaining requests
-        remaining_requests = list(set(solution_request_list) - big_d)
+        # Get remaining requests - use set operations for efficiency
+        remaining_requests = solution_request_set - big_d
         if not remaining_requests:
             break
         
+        # Convert to list only for sorting
+        remaining_list = list(remaining_requests)
+        
         # Sort by relatedness to selected request
         relatedness_func = big_r_function(meta_obj, r, norm_obj)
-        remaining_requests.sort(key=relatedness_func)
+        remaining_list.sort(key=relatedness_func)
         
         # Select next request using roulette wheel selection
         y = random.random()
-        selection_index = int((y ** meta_obj.parameters.p) * len(remaining_requests))
-        selection_index = min(selection_index, len(remaining_requests) - 1)  # Ensure index is valid
+        selection_index = int((y ** meta_obj.parameters.p) * len(remaining_list))
+        selection_index = min(selection_index, len(remaining_list) - 1)  # Ensure index is valid
         
-        selected_request = remaining_requests[selection_index]
+        selected_request = remaining_list[selection_index]
         big_d.add(selected_request)
     
     # Remove selected requests

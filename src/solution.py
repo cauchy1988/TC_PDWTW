@@ -51,12 +51,13 @@ class InnerDictForNormalization:
 	def copy(self) -> InnerDictForNormalization:
 		new_obj = InnerDictForNormalization()
 		
-		new_obj.distance_pick_dict = copy.deepcopy(self.distance_pick_dict)
-		new_obj.distance_delivery_dict = copy.deepcopy(self.distance_delivery_dict)
-		new_obj.start_time_diff_pick_dict = copy.deepcopy(self.start_time_diff_pick_dict)
-		new_obj.start_time_diff_delivery_dict = copy.deepcopy(self.start_time_diff_delivery_dict)
-		new_obj.load_diff_dict = copy.deepcopy(self.load_diff_dict)
-		new_obj.vehicle_set_diff_dict = copy.deepcopy(self.vehicle_set_diff_dict)
+		# Use shallow copy for better performance since values are immutable
+		new_obj.distance_pick_dict = {k: v.copy() for k, v in self.distance_pick_dict.items()}
+		new_obj.distance_delivery_dict = {k: v.copy() for k, v in self.distance_delivery_dict.items()}
+		new_obj.start_time_diff_pick_dict = {k: v.copy() for k, v in self.start_time_diff_pick_dict.items()}
+		new_obj.start_time_diff_delivery_dict = {k: v.copy() for k, v in self.start_time_diff_delivery_dict.items()}
+		new_obj.load_diff_dict = {k: v.copy() for k, v in self.load_diff_dict.items()}
+		new_obj.vehicle_set_diff_dict = {k: v.copy() for k, v in self.vehicle_set_diff_dict.items()}
 		
 		return new_obj
 
@@ -121,47 +122,55 @@ def generate_normalization_dict(meta_obj: Meta, one_solution: PDWTWSolution) -> 
 	load_diff_dict = {}
 	vehicle_set_diff = {}
 	
-	request_id_list = [request_id for request_id in one_solution.request_id_to_vehicle_id]
-	request_id_list.sort()
-	for i in range(len(request_id_list)):
-		distance_pic_dict[request_id_list[i]] = {}
-		distance_delivery_dict[request_id_list[i]] = {}
-		start_time_diff_pick_dict[request_id_list[i]] = {}
-		start_time_diff_delivery_dict[request_id_list[i]] = {}
-		load_diff_dict[request_id_list[i]] = {}
-		vehicle_set_diff[request_id_list[i]] = {}
+	request_id_list = sorted(one_solution.request_id_to_vehicle_id.keys())
+	n_requests = len(request_id_list)
+	
+	# Pre-fetch commonly accessed data to avoid repeated lookups
+	requests = meta_obj.requests
+	distances = meta_obj.distances
+	
+	# Cache node IDs and service times for each request
+	request_data = {}
+	for req_id in request_id_list:
+		req = requests[req_id]
+		pick_node = req.pick_node_id
+		delivery_node = req.delivery_node_id
+		request_data[req_id] = {
+			'pick_node': pick_node,
+			'delivery_node': delivery_node,
+			'pick_time': one_solution.get_node_start_service_time_in_path(pick_node),
+			'delivery_time': one_solution.get_node_start_service_time_in_path(delivery_node),
+			'capacity': req.require_capacity,
+			'vehicle_set': req.vehicle_set
+		}
+	
+	for i in range(n_requests):
+		req_i = request_id_list[i]
+		data_i = request_data[req_i]
 		
-		first_pick_node_id = meta_obj.requests[request_id_list[i]].pick_node_id
-		first_delivery_node_id = meta_obj.requests[request_id_list[i]].delivery_node_id
+		distance_pic_dict[req_i] = {}
+		distance_delivery_dict[req_i] = {}
+		start_time_diff_pick_dict[req_i] = {}
+		start_time_diff_delivery_dict[req_i] = {}
+		load_diff_dict[req_i] = {}
+		vehicle_set_diff[req_i] = {}
 		
-		first_pick_node_start_time = one_solution.get_node_start_service_time_in_path(first_pick_node_id)
-		first_delivery_node_start_time = one_solution.get_node_start_service_time_in_path(first_delivery_node_id)
-		for j in range(i + 1, len(request_id_list)):
-			second_pick_node_id = meta_obj.requests[request_id_list[j]].pick_node_id
-			second_delivery_node_id = meta_obj.requests[request_id_list[j]].delivery_node_id
-			
-			second_pick_node_start_time = one_solution.get_node_start_service_time_in_path(second_pick_node_id)
-			second_delivery_node_start_time = one_solution.get_node_start_service_time_in_path(second_delivery_node_id)
+		for j in range(i + 1, n_requests):
+			req_j = request_id_list[j]
+			data_j = request_data[req_j]
 			
 			# update dicts
-			distance_pic_dict[request_id_list[i]][request_id_list[j]] = meta_obj.distances[first_pick_node_id][
-				second_pick_node_id]
-			distance_delivery_dict[request_id_list[i]][request_id_list[j]] = meta_obj.distances[first_delivery_node_id][
-				second_delivery_node_id]
+			distance_pic_dict[req_i][req_j] = distances[data_i['pick_node']][data_j['pick_node']]
+			distance_delivery_dict[req_i][req_j] = distances[data_i['delivery_node']][data_j['delivery_node']]
 			
-			start_time_diff_pick_dict[request_id_list[i]][request_id_list[j]] = abs(
-				first_pick_node_start_time - second_pick_node_start_time)
-			start_time_diff_delivery_dict[request_id_list[i]][request_id_list[j]] = abs(
-				first_delivery_node_start_time - second_delivery_node_start_time)
+			start_time_diff_pick_dict[req_i][req_j] = abs(data_i['pick_time'] - data_j['pick_time'])
+			start_time_diff_delivery_dict[req_i][req_j] = abs(data_i['delivery_time'] - data_j['delivery_time'])
 			
-			load_diff_dict[request_id_list[i]][request_id_list[j]] = abs(
-				meta_obj.requests[request_id_list[i]].require_capacity - meta_obj.requests[
-					request_id_list[j]].require_capacity)
+			load_diff_dict[req_i][req_j] = abs(data_i['capacity'] - data_j['capacity'])
 			
-			vehicle_set_diff[request_id_list[i]][request_id_list[j]] = (1 - len(
-				meta_obj.requests[request_id_list[i]].vehicle_set & meta_obj.requests[
-					request_id_list[j]].vehicle_set) / min(len(meta_obj.requests[request_id_list[i]].vehicle_set),
-			                                               len(meta_obj.requests[request_id_list[j]].vehicle_set)))
+			intersection_size = len(data_i['vehicle_set'] & data_j['vehicle_set'])
+			min_set_size = min(len(data_i['vehicle_set']), len(data_j['vehicle_set']))
+			vehicle_set_diff[req_i][req_j] = 1 - intersection_size / min_set_size
 	
 	# normalize first five dict value
 	normalization_obj = InnerDictForNormalization()
@@ -246,7 +255,20 @@ class PDWTWSolution(Solution):
 		self.distance_cost = 0.0
 		self.time_cost = 0.0
 		
-		self.finger_print = generate_solution_finger_print(self.paths)
+		self._finger_print = None  # Lazy computation
+		self._finger_print_dirty = True
+	
+	@property
+	def finger_print(self):
+		"""Lazy computation of fingerprint"""
+		if self._finger_print_dirty or self._finger_print is None:
+			self._finger_print = generate_solution_finger_print(self.paths)
+			self._finger_print_dirty = False
+		return self._finger_print
+	
+	def _mark_finger_print_dirty(self):
+		"""Mark fingerprint as needing recomputation"""
+		self._finger_print_dirty = True
 	
 	# this interface only use for problems with homogeneous fleet
 	def add_one_same_vehicle(self, one_vehicle_id: int = None) -> int:
@@ -282,7 +304,8 @@ class PDWTWSolution(Solution):
 		new_obj.distance_cost = self.distance_cost
 		new_obj.time_cost = self.time_cost
 		
-		new_obj.finger_print = self.finger_print
+		new_obj._finger_print = self._finger_print
+		new_obj._finger_print_dirty = self._finger_print_dirty
 	
 	def copy_with_deep_copied_meta(self):
 		"""Create a deep copy of the solution"""
@@ -372,7 +395,7 @@ class PDWTWSolution(Solution):
 				self.vehicle_bank.add(vehicle_id)
 			
 			self._update_objective_cost_all()
-			self.finger_print = generate_solution_finger_print(self.paths)
+			self._mark_finger_print_dirty()
 	
 	def insert_one_request_to_one_vehicle_route_optimal(self, request_id: int, vehicle_id: int) -> bool:
 		"""Insert a request into a specific vehicle route optimally"""
@@ -400,7 +423,7 @@ class PDWTWSolution(Solution):
 			if vehicle_id in self.vehicle_bank:
 				self.vehicle_bank.remove(vehicle_id)
 			self._update_objective_cost_all()
-			self.finger_print = generate_solution_finger_print(self.paths)
+			self._mark_finger_print_dirty()
 		return ok
 	
 	def insert_one_request_to_any_vehicle_route_optimal(self, request_id: int) -> bool:
