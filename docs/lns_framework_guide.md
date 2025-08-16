@@ -312,10 +312,12 @@ Use `create_alns_framework()` or `create_simple_lns_framework()` for common use 
 ## Migration from Original ALNS
 
 ### Before (Original ALNS)
+
 ```python
 from alns import adaptive_large_neighbourhood_search
 
-result = adaptive_large_neighbourhood_search(meta_obj, initial_solution, insert_unlimited=True)
+result, _ = adaptive_large_neighbourhood_search(meta_obj, initial_solution, insert_unlimited=True,
+                                             stop_if_all_request_coped=False)
 ```
 
 ### After (New Framework)

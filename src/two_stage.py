@@ -104,7 +104,7 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
         if max_vehicle_id is None:
             break
         
-        print("loop num :", total_iteration_num)
+        print("loop num :", total_iteration_num, ", vehicle num : ", len(one_solution.paths))
         
         # Remove the vehicle and its route
         one_solution.delete_vehicle_and_its_route(max_vehicle_id)
@@ -115,22 +115,21 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
         
         try:
             # Try to reassign requests using ALNS
-            adaptive_large_neighbourhood_search(one_solution.meta_obj, one_solution, insert_unlimited=True)
+           one_solution, sub_iteration_num = adaptive_large_neighbourhood_search(one_solution.meta_obj, one_solution, insert_unlimited=True,
+                                                stop_if_all_request_coped=True)
             
-            if not one_solution.request_bank:
+           if not  one_solution.request_bank:
                 # Successfully reassigned all requests
                 result_solution = one_solution.copy()
-                total_iteration_num += one_solution.meta_obj.parameters.iteration_num
-            else:
+           else:
                 # Failed to reassign all requests, stop here
                 break
+	            
+           total_iteration_num += sub_iteration_num
         except Exception as e:
             # Handle any errors during ALNS, including vehicle deletion errors
             print(f"Warning: ALNS failed during vehicle removal: {e}")
             break
-        finally:
-            # Restore original parameters
-            one_solution.meta_obj.parameters.iteration_num = original_iteration_num
     
     # Reset parameters to original values
     result_solution.meta_obj.parameters.reset()
@@ -162,12 +161,17 @@ def two_stage_algorithm_in_homogeneous_fleet(initial_solution: PDWTWSolution) ->
     
     try:
         # Stage 1: Minimize vehicle count
+        print("start stage 1...")
         result_solution = first_stage_to_limit_vehicle_num_in_homogeneous_fleet(initial_solution)
-        
+        print("end stage 1, vehicle num : ", len(result_solution.paths))
+
         # Stage 2: Optimize using ALNS
-        adaptive_large_neighbourhood_search(result_solution.meta_obj, result_solution, insert_unlimited=True)
-        
-        return result_solution
+        print("start stage 2...")
+        final_result_solution, total_iteration_num = adaptive_large_neighbourhood_search(result_solution.meta_obj, result_solution, insert_unlimited=True,
+                                            stop_if_all_request_coped=False)
+        print("end stage 2...")
+
+        return final_result_solution
         
     except Exception as e:
         raise TwoStageError(f"Two-stage algorithm failed: {str(e)}") from e

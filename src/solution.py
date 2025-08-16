@@ -275,7 +275,7 @@ class PDWTWSolution(Solution):
 	
 	def copy(self):
 		"""Create a deep copy of the solution"""
-		new_obj = PDWTWSolution(self.meta_obj)
+		new_obj = PDWTWSolution(self.meta_obj.copy())
 		for vehicle_id, the_path in self.paths.items():
 			new_obj.paths[vehicle_id] = the_path.copy()
 		new_obj.request_bank = self.request_bank.copy()

@@ -121,7 +121,8 @@ def _assert_len_equal(w_list: List[float], reward_list: List[float], theta_list:
 	"""
 	assert len(w_list) == len(reward_list) and len(theta_list) == len(w_list)
 
-def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWSolution, insert_unlimited: bool) -> PDWTWSolution:
+def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWSolution, insert_unlimited: bool,
+                                        stop_if_all_request_coped: bool) -> Tuple[PDWTWSolution, int]:
 	"""Adaptive Large Neighbourhood Search (ALNS) algorithm for PDWTW problems.
 	
 	This function implements the ALNS metaheuristic which iteratively improves
@@ -140,6 +141,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	Raises:
 		AssertionError: If meta_obj doesn't match initial_solution.meta_obj
 		ValueError: If parameters are invalid
+		:param stop_if_all_request_coped:
 	"""
 	# Input validation
 	if meta_obj is None:
@@ -215,7 +217,11 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	accepted_solution_set: set = set()  # Track accepted solution fingerprints to avoid cycles
 	
 	# Main ALNS loop
-	for i in range(0, meta_obj.parameters.iteration_num):
+	print('start alns loop, total iteration_num : ', meta_obj.parameters.iteration_num)
+	total_iteration_num = 0
+	while total_iteration_num <  meta_obj.parameters.iteration_num:
+		print("alns loop index : ", total_iteration_num)
+		
 		# Randomly select number of requests to remove
 		q = random.randint(q_lower_bound, q_upper_bound)
 		
@@ -239,6 +245,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 		# Skip if this solution configuration was already explored
 		# finger_print唯一性依赖，需保证finger_print实现唯一且不可变
 		if s_p.finger_print in accepted_solution_set:
+			total_iteration_num += 1
 			continue
 
 		# Check if new best solution found
@@ -284,7 +291,7 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 				accepted_solution_set.pop()
 
 		# Adaptive weight update at segment boundaries
-		if ((i + 1) % meta_obj.parameters.segment_num) == 0:
+		if ((total_iteration_num + 1) % meta_obj.parameters.segment_num) == 0:
 			# Update removal operator weights based on performance
 			_assert_len_equal(w_removal, removal_theta, removal_rewards)
 			w_removal = [max(1e-8, (1 - meta_obj.parameters.r) * origin_w + meta_obj.parameters.r * (new_reward / new_theta) if new_theta > 0 else origin_w) for origin_w, new_reward, new_theta in zip(w_removal, removal_rewards, removal_theta)]
@@ -307,6 +314,9 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 
 		# Cool down temperature for simulated annealing (prevent underflow)
 		t_current = max(1e-10, t_current * meta_obj.parameters.c)
-		
+		total_iteration_num += 1
+		if stop_if_all_request_coped and 0 == len(s_best.request_bank):
+			break
+
 	# Return the best solution found
-	return s_best
+	return s_best, total_iteration_num

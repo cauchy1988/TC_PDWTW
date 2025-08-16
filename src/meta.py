@@ -51,6 +51,16 @@ class Meta:
 		# vehicle_id -> {first_node_id -> {second_node_id -> run_time}}
 		self.vehicle_run_between_nodes_time: Dict[int, Dict[int, Dict[int, float]]] = {}
 	
+	def copy(self):
+		new_meta_obj = Meta(self.parameters)
+		new_meta_obj.distances = copy.deepcopy(self.distances)
+		new_meta_obj.nodes = copy.deepcopy(self.nodes)
+		new_meta_obj.requests = copy.deepcopy(self.requests)
+		new_meta_obj.vehicles = copy.deepcopy(self.vehicles)
+		new_meta_obj.vehicle_run_between_nodes_time = copy.deepcopy(self.vehicle_run_between_nodes_time)
+		
+		return new_meta_obj
+
 	# this interface only use for problems with homogeneous fleet
 	def add_one_same_vehicle(self, new_vehicle_id: Optional[int] = None) -> int :
 		if len(self.vehicles) == 0:
@@ -134,7 +144,7 @@ class Meta:
 		end_depot_node_id = self.vehicles[deleted_vehicle_id].end_node_id
 		
 		# Check if other vehicles are using these nodes - this should never happen if logic is correct
-		start_node_in_use = any(veh.start_node_id == start_depot_node_id or veh.end_node_id == start_depot_node_id 
+		start_node_in_use = any(veh.start_node_id == start_depot_node_id or veh.end_node_id == start_depot_node_id
 		                        for veh_id, veh in self.vehicles.items() if veh_id != deleted_vehicle_id)
 		end_node_in_use = any(veh.start_node_id == end_depot_node_id or veh.end_node_id == end_depot_node_id 
 		                      for veh_id, veh in self.vehicles.items() if veh_id != deleted_vehicle_id)

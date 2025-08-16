@@ -178,6 +178,8 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int,
         ValueError: If input parameters are invalid
         InsertionError: If insertion fails
     """
+    print('start greedy insertion')
+    
     if q <= 0:
         raise ValueError(f"q must be positive, got {q}")
     
@@ -191,8 +193,10 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int,
     qq = min(len(one_solution.request_bank), q)
     
     # Get initial cost matrix
+    print("start _get_request_vehicle_cost")
     request_vehicle_cost = _get_request_vehicle_cost(meta_obj, one_solution, noise_func)
-    
+    print("end _get_request_vehicle_cost")
+
     iteration_num = 0
     max_iterations = qq * 2  # Prevent infinite loops
     
@@ -226,6 +230,8 @@ def basic_greedy_insertion(meta_obj: Meta, one_solution: PDWTWSolution, q: int,
         )
         
         iteration_num += 1
+	    
+    print('end greedy insertion')
 
 
 def _calculate_regret_cost(request_vehicle_list: Dict[int, List[Tuple[int, float]]], k: int) -> List[Tuple[int, float]]:
@@ -294,6 +300,8 @@ def regret_insertion_wrapper(k: int) -> Callable[[Meta, PDWTWSolution, int, bool
             RuntimeError: If k is larger than available vehicles
             InsertionError: If insertion fails
         """
+        print('start ', k, ' regret insertion')
+        
         if q <= 0:
             raise ValueError(f"q must be positive, got {q}")
         
@@ -371,6 +379,7 @@ def regret_insertion_wrapper(k: int) -> Callable[[Meta, PDWTWSolution, int, bool
             
             iteration_num += 1
     
+    print('end ', k, ' regret insertion')
     return _regret_k_insertion
 
 
