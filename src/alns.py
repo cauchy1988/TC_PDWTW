@@ -221,6 +221,8 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 	total_iteration_num = 0
 	while total_iteration_num <  meta_obj.parameters.iteration_num:
 		print("alns loop index : ", total_iteration_num)
+		if not stop_if_all_request_coped:
+			print("current best distance : ", s_best.distance_cost, ", request bank size : ", len(s_best.request_bank))
 		
 		# Randomly select number of requests to remove
 		q = random.randint(q_lower_bound, q_upper_bound)

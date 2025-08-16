@@ -73,9 +73,6 @@ class Path:
 			end_distance = self.meta_obj.distances[start_node_id][end_node_id]
 			self.distances: List[float] = [0, end_distance]
 			
-			# time cost of the whole route
-			self.whole_time_cost: float = self.start_service_time_line[-1] - self.start_service_time_line[0]
-
 	def copy(self):
 		new_path = Path(self.vehicle_id, self.meta_obj, False)
 		new_path.meta_obj = self.meta_obj
@@ -84,26 +81,19 @@ class Path:
 		new_path.start_service_time_line = self.start_service_time_line.copy()
 		new_path.load_line = self.load_line.copy()
 		new_path.distances = self.distances.copy()
-		new_path.whole_time_cost = self.whole_time_cost
 		
 		return new_path
 	
 	def is_path_free(self):
 		return len(self.route) <= 2
+	
+	@property
+	def whole_time_cost(self):
+		return self.start_service_time_line[-1] - self.start_service_time_line[0]
 
 	@property
 	def whole_distance_cost(self):
 		return self.distances[-1] if self.distances else 0.0
-
-	@classmethod
-	def get_path_distance_diff(cls, first_path, second_path):
-		if not first_path.distances or not second_path.distances:
-			return 0.0
-		return second_path.distances[-1] - first_path.distances[-1]
-	
-	@classmethod
-	def get_path_time_cost_diff(cls, first_path, second_path):
-		return second_path.whole_time_cost - first_path.whole_time_cost
 
 	def _update_service_times_after_insertion(self, start_idx: int) -> bool:
 		"""Update service times after inserting nodes at start_idx"""
@@ -152,6 +142,7 @@ class Path:
 		self.route.insert(delivery_insert_idx, delivery_node_id)
 		
 		# Insert placeholder values
+		prev_whole_time_cost = self.whole_time_cost
 		self.start_service_time_line.insert(pick_insert_idx, 0)
 		self.start_service_time_line.insert(delivery_insert_idx, 0)
 		
@@ -160,10 +151,8 @@ class Path:
 			return False, 0.0, 0.0
 			
 		# Update time cost
-		current_whole_time_cost = self.start_service_time_line[-1] - self.start_service_time_line[0]
-		time_cost_diff = current_whole_time_cost - self.whole_time_cost
-		self.whole_time_cost = current_whole_time_cost
-			
+		time_cost_diff = self.whole_time_cost - prev_whole_time_cost
+		
 		# Insert placeholder loads
 		self.load_line.insert(pick_insert_idx, 0.0)
 		self.load_line.insert(delivery_insert_idx, 0.0)
@@ -277,7 +266,6 @@ class Path:
 		if not self._update_service_times_after_removal(pick_node_idx):
 			raise PathError("Time window violation after removal")
 		
-		self.whole_time_cost = self.start_service_time_line[-1] - self.start_service_time_line[0]
 		time_cost_diff = prev_whole_time_cost - self.whole_time_cost
 
 		# Update loads
