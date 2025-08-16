@@ -272,12 +272,8 @@ class PDWTWSolution(Solution):
 		self.vehicle_bank.remove(delete_vehicle_id)
 		
 		self.meta_obj.delete_vehicle(delete_vehicle_id)
-	
-	def copy(self):
-		"""Create a deep copy of the solution"""
-		new_obj = PDWTWSolution(self.meta_obj.copy())
-		for vehicle_id, the_path in self.paths.items():
-			new_obj.paths[vehicle_id] = the_path.copy()
+		
+	def _copy_without_meta_obj(self, new_obj) -> None:
 		new_obj.request_bank = self.request_bank.copy()
 		new_obj.request_id_to_vehicle_id = self.request_id_to_vehicle_id.copy()
 		new_obj.node_id_to_vehicle_id = self.node_id_to_vehicle_id.copy()
@@ -287,9 +283,26 @@ class PDWTWSolution(Solution):
 		new_obj.time_cost = self.time_cost
 		
 		new_obj.finger_print = self.finger_print
-		
+	
+	def copy_with_deep_copied_meta(self):
+		"""Create a deep copy of the solution"""
+		copied_meta_obj = self.meta_obj.copy()
+		new_obj = PDWTWSolution(copied_meta_obj)
+		for vehicle_id, the_path in self.paths.items():
+			new_obj.paths[vehicle_id] = the_path.copy()
+			new_obj.paths[vehicle_id].meta_obj = copied_meta_obj
+
+		self._copy_without_meta_obj(new_obj)
 		return new_obj
 	
+	def copy(self):
+		new_obj = PDWTWSolution(self.meta_obj)
+		for vehicle_id, the_path in self.paths.items():
+			new_obj.paths[vehicle_id] = the_path.copy()
+		
+		self._copy_without_meta_obj(new_obj)
+		return new_obj
+
 	def cost_if_remove_request(self, request_id: int) -> float:
 		"""Calculate the cost if a request is removed from the solution"""
 		if request_id not in self.request_id_to_vehicle_id:

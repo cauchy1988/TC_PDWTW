@@ -85,7 +85,7 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
     if a_iteration_num >= max_iterations:
         raise TwoStageError(f"First stage failed to converge after {max_iterations} iterations")
     
-    result_solution = one_solution.copy()
+    result_solution = one_solution.copy_with_deep_copied_meta()
     
     print("vehicle num:", len(one_solution.paths))
 
@@ -120,7 +120,7 @@ def first_stage_to_limit_vehicle_num_in_homogeneous_fleet(one_solution: PDWTWSol
             
            if not  one_solution.request_bank:
                 # Successfully reassigned all requests
-                result_solution = one_solution.copy()
+                result_solution = one_solution.copy_with_deep_copied_meta()
            else:
                 # Failed to reassign all requests, stop here
                 break
