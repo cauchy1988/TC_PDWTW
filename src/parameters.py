@@ -125,8 +125,8 @@ class Parameters:
     
     # Define parameter ranges and constraints
     PARAMETER_RANGES = {
-        "alpha": ParameterRange(0.1, 10.0, description="Weight for distance cost"),
-        "beta": ParameterRange(0.1, 10.0, description="Weight for time cost"),
+        "alpha": ParameterRange(1e-8, 10.0, description="Weight for distance cost"),
+        "beta": ParameterRange(1e-8, 10.0, description="Weight for time cost"),
         "gama": ParameterRange(1000.0, 1e12, description="Penalty for unassigned requests"),
         
         "shaw_param_1": ParameterRange(1.0, 20.0, description="Weight for distance in Shaw removal"),
@@ -162,7 +162,7 @@ class Parameters:
         # Initialize default parameters
         self._params = {
             "alpha": 1.0,
-            "beta": 1.0,
+            "beta": 1e-6,
             "gama": 1000000000.0,
             "shaw_param_1": 9.0,
             "shaw_param_2": 3.0,
@@ -174,12 +174,12 @@ class Parameters:
             "annealing_p": 0.5,
             "c": 0.99975,
             "r": 0.1,
-            "reward_adds": [33, 9, 13],
+            "reward_adds": [10, 6, 3],
             "eta": 0.025,
             "initial_weight": 1,
             "iteration_num": 25000,
             "epsilon": 0.4,
-            "segment_num": 100,
+            "segment_num": 50,
             "unlimited_float": 100000000000000.0,
             "unlimited_float_bound": 100000000000000.0 + 100.0,
             "theta": 25000,
