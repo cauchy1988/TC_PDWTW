@@ -24,11 +24,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-
-import copy
-import random
-from typing import Optional
-
 from solution import PDWTWSolution
 from alns import adaptive_large_neighbourhood_search
 
@@ -167,7 +162,7 @@ def two_stage_algorithm_in_homogeneous_fleet(initial_solution: PDWTWSolution) ->
 
         # Stage 2: Optimize using ALNS
         print("start stage 2...")
-        final_result_solution, total_iteration_num = adaptive_large_neighbourhood_search(result_solution.meta_obj, result_solution, insert_unlimited=True,
+        final_result_solution, total_iteration_num = adaptive_large_neighbourhood_search(result_solution.meta_obj, result_solution, insert_unlimited=False,
                                             stop_if_all_request_coped=False)
         print("end stage 2...")
 

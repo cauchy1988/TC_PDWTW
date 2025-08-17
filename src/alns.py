@@ -250,11 +250,14 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 			total_iteration_num += 1
 			continue
 
+		# Pre-calculate objective cost and determine acceptance
+		s_p_cost = s_p.objective_cost
+		original_cost = s.objective_cost
+		
 		# Check if new best solution found
 		is_new_best = False
-		if s_p.objective_cost < s_best.objective_cost:
+		if s_p_cost < s_best.objective_cost:
 			is_new_best = True
-			s_best = s_p.copy()
 			# Reward operators for finding new best solution
 			removal_rewards[remove_func_idx] += meta_obj.parameters.reward_adds[0]
 			insertion_rewards[insertion_func_idx] += meta_obj.parameters.reward_adds[0]
@@ -262,10 +265,9 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 
 		# Solution acceptance logic (simulated annealing)
 		is_accepted = False
-		if s_p.objective_cost <= s.objective_cost:
+		if s_p_cost <= original_cost:
 			# Accept improving solutions
 			is_accepted = True
-			s = s_p.copy()
 			if not is_new_best:
 				# Reward for improving current solution (but not global best)
 				removal_rewards[remove_func_idx] += meta_obj.parameters.reward_adds[1]
@@ -273,20 +275,23 @@ def adaptive_large_neighbourhood_search(meta_obj: Meta, initial_solution: PDWTWS
 				noise_rewards[noise_func_idx] += meta_obj.parameters.reward_adds[1]
 		else:
 			# Consider accepting worse solutions based on temperature
-			delta_objective_cost = s_p.objective_cost - s.objective_cost
+			delta_objective_cost = s_p_cost - original_cost
 			accept_ratio = math.exp((-1 * delta_objective_cost) / t_current)
 			accept_random = random.random()
 			if accept_random <= accept_ratio:
 				# Accept worse solution with probability based on temperature
 				is_accepted = True
-				s = s_p.copy()
 				# Reward for diversification
 				removal_rewards[remove_func_idx] += meta_obj.parameters.reward_adds[2]
 				insertion_rewards[insertion_func_idx] += meta_obj.parameters.reward_adds[2]
 				noise_rewards[noise_func_idx] += meta_obj.parameters.reward_adds[2]
 
-		# Track accepted solutions to avoid revisiting
+		# Only copy when necessary - significant optimization!
+		if is_new_best:
+			s_best = s_p.copy()  # Copy only when new best found
+		
 		if is_accepted:
+			s = s_p  # Transfer ownership instead of copy
 			accepted_solution_set.add(s_p.finger_print)
 			# 控制accepted_solution_set最大容量，避免内存溢出
 			if len(accepted_solution_set) > ACCEPTED_SET_MAXLEN:
