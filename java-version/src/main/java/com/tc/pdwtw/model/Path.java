@@ -196,29 +196,27 @@ public class Path {
         }
 
         int routeLen = route.size();
-        List<InsertionResult> newPathList = new ArrayList<>();
-
+        InsertionResult bestResult = null;
+        double minCost = Double.MAX_VALUE;
+        double alpha = metaObj.getParameters().getAlpha();
+        double beta = metaObj.getParameters().getBeta();
         for (int i = 1; i < routeLen; i++) {
             for (int j = i + 1; j <= routeLen; j++) {
                 Path newPath = this.copy();
                 InsertionResult result = newPath.tryToInsertRequest(requestId, i, j);
                 if (result.success) {
-                    newPathList.add(new InsertionResult(true, result.distanceDiff, result.timeCostDiff, newPath));
+                    double currentCost = alpha * result.distanceDiff + beta * result.timeCostDiff;
+                    if (currentCost < minCost) {
+                        minCost = currentCost;
+                        bestResult = result;
+                    }
                 }
             }
         }
 
-        if (newPathList.isEmpty()) {
-            return new InsertionResult(false, 0.0, 0.0, null);
-        }
-
-        newPathList.sort((a, b) -> Double.compare(
-            metaObj.getParameters().getAlpha() * a.distanceDiff + metaObj.getParameters().getBeta() * a.timeCostDiff,
-            metaObj.getParameters().getAlpha() * b.distanceDiff + metaObj.getParameters().getBeta() * b.timeCostDiff
-        ));
-
-        InsertionResult best = newPathList.get(0);
-        return new InsertionResult(true, best.distanceDiff, best.timeCostDiff, best.newPath);
+        return bestResult != null
+            ? new InsertionResult(true, bestResult.distanceDiff, bestResult.timeCostDiff, bestResult.newPath)
+            : new InsertionResult(false, 0.0, 0.0, null);
     }
 
     public double getNodeStartServiceTime(int nodeId) {

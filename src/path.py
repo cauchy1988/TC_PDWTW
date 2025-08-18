@@ -175,31 +175,32 @@ class Path:
 		return True, distance_diff, time_cost_diff
 		
 	def try_to_insert_request_optimal(self, request_id: int) -> Tuple[bool, float, float, Optional['Path']]:
-		"""Find optimal insertion position for a request"""
+		"""Find optimal insertion position for a request with early termination."""
 		if self.vehicle_id not in self.meta_obj.requests[request_id].vehicle_set:
-			return False, 0, 0, None
+			return False, 0.0, 0.0, None
 		
 		route_len = len(self.route)
-		new_path_list = []
-		
+		best_cost = float('inf')
+		best_path = None
+		best_distance = 0.0
+		best_time = 0.0
+		alpha = self.meta_obj.parameters.alpha
+		beta = self.meta_obj.parameters.beta
 		for i in range(1, route_len):
 			for j in range(i + 1, route_len + 1):
 				new_path = self.copy()
 				ok, distance_diff, time_cost_diff = new_path.try_to_insert_request(request_id, i, j)
 				if ok:
-					new_path_list.append((distance_diff, time_cost_diff, new_path))
-				
-		if not new_path_list:
-			return False, 0, 0, None
-		
-		# Sort by weighted cost
-		new_path_list.sort(key=lambda item: (
-			self.meta_obj.parameters.alpha * item[0], 
-			self.meta_obj.parameters.beta * item[1]
-		))
-		
-		best_path = new_path_list[0]
-		return True, best_path[0], best_path[1], best_path[2]
+					current_cost = alpha * distance_diff + beta * time_cost_diff
+					if current_cost < best_cost:
+						best_cost = current_cost
+						best_path = new_path
+						best_distance = distance_diff
+						best_time = time_cost_diff
+						if best_cost == 0:  # Early exit if perfect match found
+							return True, best_distance, best_time, best_path
+
+		return (True, best_distance, best_time, best_path) if best_path else (False, 0.0, 0.0, None)
 	
 	def _update_service_times_after_removal(self, start_idx: int) -> bool:
 		"""Update service times after removing nodes"""
