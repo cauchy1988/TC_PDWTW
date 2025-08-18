@@ -5,7 +5,7 @@ This is a Java port of the Python TC_PDWTW (Pickup and Delivery Problem with Tim
 ## Project Structure
 
 ```
-java-version-claude/
+java-version/
 ├── src/main/java/com/tc/pdwtw/
 │   ├── algorithm/          # Algorithm implementations (ALNS, Two-Stage, etc.)
 │   ├── benchmark/          # Benchmark readers and data processing
@@ -19,7 +19,7 @@ java-version-claude/
 
 ## Requirements
 
-- Java 11 or higher
+- Java 8 or higher
 - Maven 3.6 or higher
 
 ## Building the Project
