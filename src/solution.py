@@ -295,7 +295,7 @@ class PDWTWSolution(Solution):
 		
 		self.meta_obj.delete_vehicle(delete_vehicle_id)
 		
-	def _copy_without_meta_obj(self, new_obj) -> None:
+	def _copy_without_meta_obj(self, new_obj : PDWTWSolution) -> None:
 		new_obj.request_bank = self.request_bank.copy()
 		new_obj.request_id_to_vehicle_id = self.request_id_to_vehicle_id.copy()
 		new_obj.node_id_to_vehicle_id = self.node_id_to_vehicle_id.copy()
